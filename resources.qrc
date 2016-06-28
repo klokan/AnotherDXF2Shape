@@ -1,0 +1,12 @@
+<RCC>
+ <qresource prefix="/plugins/AnotherDXF2Shape">
+ <file>icon.png</file>
+ <file>m_icon.png</file>
+ </qresource>
+</RCC>
+<!-- 
+!! Achtung: Kommentar am Anfang der Datei führt zum Fehler
+Befehl zur Neuerstellung/Neueinbindung des Logos 
+pyrcc4 -o resources.py resources.qrc 
+-->
+

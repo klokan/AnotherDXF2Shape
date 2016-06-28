@@ -1,0 +1,47 @@
+# This file contains metadata for your plugin. Since 
+# version 2.0 of QGIS this is the proper way to supply 
+# information about a plugin. The old method of 
+# embedding metadata in __init__.py will 
+# is no longer supported since version 2.0.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=Another DXF Importer / DXF2Shape Converter
+qgisMinimumVersion=2.8
+description=Add DXF to QGIS and convert DXF to Shape
+version=0.1
+changelog=27.06.2016 V0.1:
+	-  release first version
+author=Mike Blechschmidt EZUSoft 
+email=qgis@makobo.de
+
+about=Features:
+      - Other elements than the standard import are displayed 
+      - Display of text (Labeling)
+      - Categorization by Layer
+      - Group by Layer
+      - Separate representation by layers possible
+
+
+tracker=https://github.com/EZUSoft/AnotherDXF2Shape/issues
+repository=https://github.com/EZUSoft/AnotherDXF2Shape
+# End of mandatory metadata
+
+# Recommended items:
+
+# Uncomment the following line and add your changelog:
+# changelog=
+
+# Tags are comma separated with spaces allowed
+tags=DXF Convert Shape Layer Import
+
+homepage=http://www.makobo.de/links/Forum_AnotherDXF2Shape.php
+category=Vector
+icon=icon.png
+# experimental flag
+experimental=False
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
