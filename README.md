@@ -13,6 +13,6 @@ Features:
 
 Usage:
 After installation you can use the functions under the menu item:
- "vector -> "Import DXF Ipmort/Convert".
+ "vector -> DXF Import/Convert"
 
 [Homepage](http://forum.makobo.de/viewtopic.php?f=3&t=39)
