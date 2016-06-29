@@ -15,4 +15,4 @@ Usage:
 After installation you can use the functions under the menu item:
  "vector -> DXF Import/Convert"
 
-[Homepage](http://forum.makobo.de/viewtopic.php?f=3&t=39)
+[Homepage](http://www.makobo.de/links/Forum_AnotherDXF2Shape.php)
