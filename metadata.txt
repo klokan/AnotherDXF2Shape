@@ -10,9 +10,16 @@
 name=Another DXF Importer / DXF2Shape Converter
 qgisMinimumVersion=2.8
 description=Add DXF to QGIS and convert DXF to Shape
-version=0.1
-changelog=27.06.2016 V0.1:
+version=0.2
+changelog=29.06.2016 V0.2
+        - Adjustments for languages
+        - Customize menu
+          
+           27.06.2016 V0.1:
 	-  release first version
+          
+
+
 author=Mike Blechschmidt EZUSoft 
 email=qgis@makobo.de
 
@@ -36,7 +43,7 @@ repository=https://github.com/EZUSoft/AnotherDXF2Shape
 # Tags are comma separated with spaces allowed
 tags=DXF Convert Shape Layer Import
 
-homepage=http://www.makobo.de/links/Forum_AnotherDXF2Shape.php
+homepage=http://gis.makobo.de/en_qgis-dxfimport-dxf2shape/
 category=Vector
 icon=icon.png
 # experimental flag

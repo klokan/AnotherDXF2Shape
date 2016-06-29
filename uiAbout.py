@@ -35,7 +35,7 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'uiAbout.ui'))
    
 
-class uiAbout(QtGui.QDialog, FORM_CLASS):
+class uiAbout(QtGui.QDialog, FORM_CLASS):  
     def __init__(self, parent=None):
         """Constructor."""
         super(uiAbout, self).__init__(parent)
@@ -47,10 +47,14 @@ class uiAbout(QtGui.QDialog, FORM_CLASS):
         self.setupUi(self)
 
         s=self.lblLink.text()
-        s=s.replace("$$Homepage$$","http://www.makobo.de/links/Home_AnotherDXF2Shape.php?id=" + fncBrowserID())
-        s=s.replace("$$Daten$$","http://www.makobo.de/links/Daten_AnotherDXF2Shape.php?id=" + fncBrowserID())
-        s=s.replace("$$Forum$$","http://www.makobo.de/links/Forum_AnotherDXF2Shape.php?id=" + fncBrowserID())
-        s=s.replace("$$Doku$$","http://www.makobo.de/links/Dokumentation_AnotherDXF2Shape.php?id=" + fncBrowserID())
+        s=s.replace("$$HomepageEN$$","http://www.makobo.de/links/Home_AnotherDXF2Shape.php?lang=EN&id=" + fncBrowserID())
+        s=s.replace("$$HomepageDE$$","http://www.makobo.de/links/Home_AnotherDXF2Shape.php?lang=DE&id=" + fncBrowserID())
+        
+        s=s.replace("$$ForumEN$$","http://www.makobo.de/links/Forum_AnotherDXF2Shape.php?lang=EN&id=" + fncBrowserID())
+        s=s.replace("$$ForumDE$$","http://www.makobo.de/links/Forum_AnotherDXF2Shape.php?lang=DE&id=" + fncBrowserID())
+        
+        s=s.replace("$$DokuEN$$","http://www.makobo.de/links/Dokumentation_AnotherDXF2Shape?lang=EN&id=" + fncBrowserID())
+        s=s.replace("$$DokuDE$$","http://www.makobo.de/links/Dokumentation_AnotherDXF2Shape?lang=DE&id=" + fncBrowserID())
         self.lblLink.setText(s)
   
 if __name__ == "__main__":

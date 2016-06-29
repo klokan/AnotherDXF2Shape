@@ -152,6 +152,12 @@
       </item>
       <item>
        <widget class="QPushButton" name="browseDXFDatei">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="maximumSize">
          <size>
           <width>70</width>
@@ -220,6 +226,12 @@
         </item>
         <item>
          <widget class="QPushButton" name="browseZielPfad">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="maximumSize">
            <size>
             <width>70</width>
@@ -310,7 +322,7 @@
    </property>
    <property name="geometry">
     <rect>
-     <x>310</x>
+     <x>190</x>
      <y>10</y>
      <width>130</width>
      <height>130</height>

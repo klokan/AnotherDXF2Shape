@@ -114,9 +114,9 @@ p, li { white-space: pre-wrap; }
 
 
 
-&lt;a href=&quot;$$Homepage$$&quot;&gt;Homepage&lt;/a&gt;,&amp;nbsp;&amp;nbsp;
-&lt;a href=&quot;$$Forum$$&quot;&gt;Forum&lt;/a&gt;,&amp;nbsp;&amp;nbsp;
-&lt;a href=&quot;$$Doku$$&quot;&gt;Documentation&lt;/a&gt;,&amp;nbsp;&amp;nbsp;
+&lt;a href=&quot;$$HomepageEN$$&quot;&gt;Homepage&lt;/a&gt;,&amp;nbsp;&amp;nbsp;
+&lt;a href=&quot;$$ForumEN$$&quot;&gt;Forum&lt;/a&gt;,&amp;nbsp;&amp;nbsp;
+&lt;a href=&quot;$$DokuEN$$&quot;&gt;Documentation&lt;/a&gt;,&amp;nbsp;&amp;nbsp;
 &lt;a href=&quot;https://github.com/EZUSoft/AnotherDXF2Shape&quot;&gt;Code-Repository&lt;/a&gt;,&amp;nbsp; Lizenz: 
 &lt;a href=&quot;http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html&quot;&gt;GPLv2&lt;/a&gt;
 &lt;/body&gt;

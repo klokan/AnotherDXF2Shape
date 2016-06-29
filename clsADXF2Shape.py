@@ -175,17 +175,11 @@ class clsADXF2Shape:
             icon_path,
             text=self.tr('Import or Convert'),
             callback=self.run,
-            parent=self.iface.mainWindow())
+            parent=self.iface.mainWindow())  
         
         self.add_action(
             icon_path,
-            text=self.tr('Documentation'),
-            callback=self.HilfeAnzeige,
-            parent=self.iface.mainWindow())
-        
-        self.add_action(
-            icon_path,
-            text=self.tr('About'),
+            text=self.tr('About/Help'),
             callback=self.About,
             parent=self.iface.mainWindow())
 
@@ -202,10 +196,6 @@ class clsADXF2Shape:
         # About-Fenster wird modal geöffnet
         cls=uiAbout()
         cls.exec_()
-    
-    def HilfeAnzeige(self): 
-        # Link öffnen
-        webbrowser.open_new_tab("http://www.makobo.de/links/Dokumentation_ADXF2Shape.php?id=" + fncBrowserID())
         
     def run(self):
         cls=uiADXF2Shape()
