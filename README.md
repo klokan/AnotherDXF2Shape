@@ -4,7 +4,7 @@ QGIS Plugin DXF Import and DXF to Shape convert
 
 Features:
       
-      - Other elements than the standard import are displayed 
+      - More elements than the standard import are displayed 
       - Display of text (Labeling)
       - Categorization by Layer
       - Group by Layer
