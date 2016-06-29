@@ -1,53 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.1" language="de_DE">
+<!DOCTYPE TS><TS version="2.0" language="de_DE" sourcelanguage="">
 <context>
     <name>@default</name>
     <message>
-        <location filename="../clsDXFTools.py" line="127"/>
+        <location filename="../clsDXFTools.py" line="129"/>
         <source>Overwriting the following files</source>
         <translation>Bestehende Dateien überschreiben</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="138"/>
+        <location filename="../clsDXFTools.py" line="140"/>
         <source>Error deleting file</source>
         <translation>Datei(en) konnten nicht gelöscht werden</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="205"/>
+        <location filename="../clsDXFTools.py" line="224"/>
         <source>Cancel</source>
         <translation>Abbruch</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="205"/>
+        <location filename="../clsDXFTools.py" line="224"/>
         <source>Pleace set target</source>
         <translation>Zielverzeichnis festlegen</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="214"/>
+        <location filename="../clsDXFTools.py" line="233"/>
         <source>Edit Entity: </source>
         <translation>Bearbeite Entity: </translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="220"/>
+        <location filename="../clsDXFTools.py" line="261"/>
         <source>Creation &apos;</source>
         <translation>Erstellung &apos;</translation>
     </message>
     <message>
-        <location filename="../fnc4all.py" line="136"/>
+        <location filename="../fnc4all.py" line="151"/>
         <source>Program termination</source>
         <translation>Programmabbruch</translation>
     </message>
     <message>
-        <location filename="../fnc4all.py" line="136"/>
+        <location filename="../fnc4all.py" line="151"/>
         <source>Temporary directory
 </source>
         <translation>Temporäres Verzeichnis</translation>
     </message>
     <message>
-        <location filename="../fnc4all.py" line="136"/>
+        <location filename="../fnc4all.py" line="151"/>
         <source>can not be created</source>
         <translation>konnte nicht erstellt werden</translation>
+    </message>
+    <message>
+        <location filename="../clsDXFTools.py" line="168"/>
+        <source>Copy DXF-File</source>
+        <translation>DXF-Datei kopieren</translation>
     </message>
 </context>
 <context>
@@ -98,10 +102,10 @@ p, li { white-space: pre-wrap; }
 
 
 
-&lt;a href=&quot;$$Homepage$$&quot;&gt;Homepage&lt;/a&gt;,&amp;nbsp;&amp;nbsp;
-&lt;a href=&quot;$$Forum$$&quot;&gt;Forum&lt;/a&gt;,&amp;nbsp;&amp;nbsp;
-&lt;a href=&quot;$$Doku$$&quot;&gt;Documentation&lt;/a&gt;,&amp;nbsp;&amp;nbsp;
-&lt;a href=&quot;https://github.com/EZUSoft/ADXF2Shape&quot;&gt;Code-Repository&lt;/a&gt;,&amp;nbsp; Lizenz: 
+&lt;a href=&quot;$$HomepageEN$$&quot;&gt;Homepage&lt;/a&gt;,&amp;nbsp;&amp;nbsp;
+&lt;a href=&quot;$$ForumEN$$&quot;&gt;Forum&lt;/a&gt;,&amp;nbsp;&amp;nbsp;
+&lt;a href=&quot;$$DokuEN$$&quot;&gt;Documentation&lt;/a&gt;,&amp;nbsp;&amp;nbsp;
+&lt;a href=&quot;https://github.com/EZUSoft/AnotherDXF2Shape&quot;&gt;Code-Repository&lt;/a&gt;,&amp;nbsp; Lizenz: 
 &lt;a href=&quot;http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html&quot;&gt;GPLv2&lt;/a&gt;
 &lt;/body&gt;
 &lt;/html&gt;
@@ -122,10 +126,10 @@ p, li { white-space: pre-wrap; }
 
 
 
-&lt;a href=&quot;$$Homepage$$&quot;&gt;Homepage&lt;/a&gt;,&amp;nbsp;&amp;nbsp;
-&lt;a href=&quot;$$Forum$$&quot;&gt;Forum&lt;/a&gt;,&amp;nbsp;&amp;nbsp;
-&lt;a href=&quot;$$Doku$$&quot;&gt;Dokumentation&lt;/a&gt;,&amp;nbsp;&amp;nbsp;
-&lt;a href=&quot;https://github.com/EZUSoft/ADXF2Shape&quot;&gt;Code-Repository&lt;/a&gt;,&amp;nbsp; Lizenz: 
+&lt;a href=&quot;$$HomepageDE$$&quot;&gt;Homepage&lt;/a&gt;,&amp;nbsp;&amp;nbsp;
+&lt;a href=&quot;$$ForumDE$$&quot;&gt;Forum&lt;/a&gt;,&amp;nbsp;&amp;nbsp;
+&lt;a href=&quot;$$DokuDE$$&quot;&gt;Dokumentation&lt;/a&gt;,&amp;nbsp;&amp;nbsp;
+&lt;a href=&quot;https://github.com/EZUSoft/AnotherDXF2Shape&quot;&gt;Code-Repository&lt;/a&gt;,&amp;nbsp; Lizenz: 
 &lt;a href=&quot;http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html&quot;&gt;GPLv2&lt;/a&gt;
 &lt;/body&gt;
 &lt;/html&gt;
@@ -135,24 +139,19 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>clsADXF2Shape</name>
     <message>
-        <location filename="../clsADXF2Shape.py" line="191"/>
+        <location filename="../clsADXF2Shape.py" line="190"/>
         <source>&amp;DXF Import/Convert</source>
         <translation>&amp;DXF Import/Konvertierung</translation>
     </message>
     <message>
-        <location filename="../clsADXF2Shape.py" line="169"/>
+        <location filename="../clsADXF2Shape.py" line="174"/>
         <source>Import or Convert</source>
         <translation>Importieren/Konvertieren</translation>
     </message>
     <message>
-        <location filename="../clsADXF2Shape.py" line="175"/>
-        <source>Documentation</source>
-        <translation>Dokumentation</translation>
-    </message>
-    <message>
-        <location filename="../clsADXF2Shape.py" line="181"/>
-        <source>About</source>
-        <translation>Über das Programm</translation>
+        <location filename="../clsADXF2Shape.py" line="180"/>
+        <source>About/Help</source>
+        <translation>Über das Programm/Hilfe</translation>
     </message>
 </context>
 <context>
@@ -225,67 +224,67 @@ separat ausspielen</translation>
 <context>
     <name>uiADXF2Shape</name>
     <message>
-        <location filename="../uiADXF2Shape.py" line="121"/>
+        <location filename="../uiADXF2Shape.py" line="120"/>
         <source>Map unit</source>
         <translation>Karteneinheiten</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="122"/>
+        <location filename="../uiADXF2Shape.py" line="121"/>
         <source>Millimeter</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="156"/>
+        <location filename="../uiADXF2Shape.py" line="155"/>
         <source>Specify destination path</source>
         <translation>Zielpfad für Shapes festlegen</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="157"/>
+        <location filename="../uiADXF2Shape.py" line="156"/>
         <source>Output shape path</source>
         <translation>Shape Zielpfad</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="199"/>
+        <location filename="../uiADXF2Shape.py" line="201"/>
         <source>DXF-file not selected</source>
         <translation>DXF Datei nicht festgelegt</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="199"/>
+        <location filename="../uiADXF2Shape.py" line="201"/>
         <source>Please specify a DXF-File</source>
         <translation>DXF Datei auswählen</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="202"/>
+        <location filename="../uiADXF2Shape.py" line="204"/>
         <source>DXF-file not found</source>
         <translation>DXF-Datei nicht gefunden</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="213"/>
+        <location filename="../uiADXF2Shape.py" line="215"/>
         <source>Destination path not selected</source>
         <translation>Zielpfad nicht festgelegt</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="218"/>
+        <location filename="../uiADXF2Shape.py" line="220"/>
         <source>Destination path not found</source>
         <translation>Zielpfad nicht gefunden</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="229"/>
+        <location filename="../uiADXF2Shape.py" line="231"/>
         <source>Reset text height</source>
         <translation>Texthöhe zurückgesetzt</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="225"/>
+        <location filename="../uiADXF2Shape.py" line="227"/>
         <source>Text height can not assume a zero value</source>
         <translation>Texthöhe darf nicht Null sein</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="229"/>
+        <location filename="../uiADXF2Shape.py" line="231"/>
         <source>Error converting text to numbers</source>
         <translation>Fehler bei der Umwandlung in eine Zahl</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="213"/>
+        <location filename="../uiADXF2Shape.py" line="215"/>
         <source>Please specify a target path for shapes</source>
         <translation>Bitte das Zielverzeichnis fürdie Shapes festlegen</translation>
     </message>
