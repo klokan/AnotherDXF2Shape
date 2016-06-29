@@ -15,4 +15,4 @@ Usage:
 After installation you can use the functions under the menu item:
  "vector -> DXF Import/Convert"
 
-[Homepage](http://www.makobo.de/links/Forum_AnotherDXF2Shape.php)
+[Homepage](http://gis.makobo.de/en_qgis-dxfimport-dxf2shape/)
