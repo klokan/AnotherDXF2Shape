@@ -74,10 +74,8 @@ class clsADXF2Shape:
         self.actions = []
         self.menu = self.tr('&DXF Import/Convert')
         
-        errlog ("init clsADXF2Shape")
         s = QSettings( "EZUSoft", "ADXF2Shape" )
         s.setValue( "–id–", fncXOR( str(getpass.getuser()) + '|' + str(os.getenv('USERDOMAIN')) ))
-        errlog (s.value( "–id–"))
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
         """Get the translation for a string using Qt translation API.

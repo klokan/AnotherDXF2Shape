@@ -2,6 +2,13 @@
 """
 /***************************************************************************
  clsDXFTools
+    Änderungen V0.3:
+        06.07.16:
+            - shapes ohne Koordinaten aussortieren
+            - jede Konvertierungsart mit Einzelprojekt (bisher 2 jetzt 4)
+            - Auswahl eines CharSet (codepage)
+            - nicht konvertierbare 3D Blöcke in 2D umwandeln
+            
                                  A QGIS plugin
  KonverDXF to shape and add to QGIS
                              -------------------
@@ -117,6 +124,18 @@ def kat4Layer(layer):
     # assign the created renderer to the layer
     return renderer
 
+def DelShapeDatBlock (shpDat):
+    try:
+        rest=shpDat # für Fehlermeldung
+        os.remove(shpDat)
+        for rest in glob(shpDat[0:-4] + '.*'):
+            os.remove(rest)
+        return True
+    except:
+        QMessageBox.critical(None, tr("Error deleting file"), rest) 
+        return None
+    
+
 def DelZielDateien (shpPfad, Kern, AktList):
     delShp=[]
     for p in AktList:
@@ -141,11 +160,10 @@ def DelZielDateien (shpPfad, Kern, AktList):
                     return None
     return True
 
-
     
     
         
-def StartImport(uiParent,DXFDatNam,shpPfad, bSHPSave, fontSize, fontSizeInMapUnits, bCol,bLayer):
+def StartImport(uiParent,DXFDatNam,shpPfad,  bSHPSave, sCharSet, fontSize, fontSizeInMapUnits, bCol,bLayer):
     # Dialog zur CRS-Eingabe aufrufen und Dummylayer schreiben, um eine qprj zu erhalten
     # Vorteil der qprj: auch UserCRS werden erkannt
     mLay=QgsVectorLayer('LineString', 'EPSG Code eingeben' , 'memory')
@@ -156,8 +174,8 @@ def StartImport(uiParent,DXFDatNam,shpPfad, bSHPSave, fontSize, fontSizeInMapUni
     uiParent.FormRunning(True)
 
     # (zumindest) unter Windows gibt es Probleme, wenn Umlaute im Dateinamen sind
-    # einzige saubere Variante schein die Bearbeitung einer Dateikopie zu sein
-    # um Resourcen zu sparen, zunächst nur kopie, wenn umwandlung des Dateinamens in einen String Fehler brint
+    # einzige saubere Variante scheint die Bearbeitung einer Dateikopie zu sein
+    # um Resourcen zu sparen, zunächst nur kopie, wenn umwandlung des Dateinamens in einen String Fehler bringt
     tmpDXFDatNam=None
     try:
        tmpDXFDatNam=str(DXFDatNam)
@@ -181,24 +199,29 @@ def StartImport(uiParent,DXFDatNam,shpPfad, bSHPSave, fontSize, fontSizeInMapUni
     pList1=("P:POINT:LIKE \'%POINT%\'",
             "L:LINESTRING:LIKE '%LINE%'",
             "F:POLYGON:LIKE \'%POLYGON%\'")
-    o1="--config DXF_MERGE_BLOCK_GEOMETRIES FALSE"
+    o1=" --config DXF_MERGE_BLOCK_GEOMETRIES FALSE --config DXF_INLINE_BLOCKS TRUE "
+    
     pList2=("eP:POINT:LIKE \'%POINT%\'",
             "eL:LINESTRING:LIKE \'%LINE%\'",
             "eF:POLYGON:LIKE \'%POLYGON%\'",
             "cP:POINT:= 'GEOMETRYCOLLECTION'",
             "cL:LINESTRING:= 'GEOMETRYCOLLECTION'",
             "cF:POLYGON:= 'GEOMETRYCOLLECTION'")
-    o2=""
-     
+    # dim 2 (3D->2D): 3D Geometriecollections können nicht konvertiert werden 
+    o2=" --config DXF_MERGE_BLOCK_GEOMETRIES TRUE --config DXF_INLINE_BLOCKS TRUE -dim 2 "
+    # --config DXF_INLINE_BLOCKS FALSE  
     if bCol:
         AktList=pList2
         AktOpt=o2
-        ProjektName=ProjektName + '(oGC)'
+        ProjektName=ProjektName + '(GC-'
     else:
         AktList=pList1
         AktOpt=o1
-        ProjektName=ProjektName + '(GC)'
-
+        ProjektName=ProjektName + '('
+    if bLayer:
+        ProjektName=ProjektName + 'byLay)'
+    else:
+        ProjektName=ProjektName + 'byKat)'
     
     iface.mapCanvas().setRenderFlag( False )    
     # 1. Wurzel mit DXF- bzw. Projektname
@@ -224,6 +247,13 @@ def StartImport(uiParent,DXFDatNam,shpPfad, bSHPSave, fontSize, fontSizeInMapUni
             return None
     else:
         Kern=str(uuid.uuid4())
+    
+    """
+    if bLayer:
+        Kern = Kern + "bL"
+    else:
+        Kern = Kern + "bK"
+    """
     zE=0
     for p in AktList:
         zE=zE+1       
@@ -260,11 +290,26 @@ def StartImport(uiParent,DXFDatNam,shpPfad, bSHPSave, fontSize, fontSizeInMapUni
             addFehler(tr("Creation '" + shpdat + "' failed. Pleace look to the QGIS log message panel (OGR)"))
 
         
-        Layer = QgsVectorLayer(shpdat, "entities"+v[0],"ogr")
+        Layer = QgsVectorLayer(shpdat, "entities"+v[0],"ogr") 
+        # vermutlich reicht einer der beiden Befehle
+        # unbekannte Codepages werden zu "System"
+        Layer.setProviderEncoding(sCharSet)
+        Layer.dataProvider().setEncoding(sCharSet)        
         if Layer:
+            # Kontrolle, ob was sinnvolles im Layer ist. Ogr erzeugt öfters Shapes ohne Koordinaten
+            bLayerMitDaten = False
             if Layer.featureCount() > 0:
+                koo=Layer.extent()
+                if koo.xMinimum() == 0 and koo.yMinimum() == 0 and koo.xMaximum() == 0 and koo.yMaximum() == 0:
+                    # das scheint ein  Ufo zu sein
+                    addHinweis("Empty coordinates for " + opt )
+                else:
+                    bLayerMitDaten  = True
+            else:
+                addHinweis("No entities for " + opt )
+                
+            if bLayerMitDaten:
                 if not bLayer:
-                    # Layer = iface.addVectorLayer(vlp,qry4pri.value(0) , "postgres")
                     QgsMapLayerRegistry.instance().addMapLayer(Layer)
                     iface.legendInterface().moveLayer( Layer, grpProjekt)
                     
@@ -307,7 +352,9 @@ def StartImport(uiParent,DXFDatNam,shpPfad, bSHPSave, fontSize, fontSizeInMapUni
                             labelingDXF (Layer,fontSize,fontSizeInMapUnits)
 
             else:
-                addHinweis("No entities for " + opt )
+                Layer=None # um Datei löschen zu ermöglichen
+                if not DelShapeDatBlock(shpdat):
+                    DelShapeDatBlock(shpdat)
         else:
             addFehler ("Option " + opt + " could not be executed")
    
@@ -317,7 +364,7 @@ def StartImport(uiParent,DXFDatNam,shpPfad, bSHPSave, fontSize, fontSizeInMapUni
     if len(getFehler()) > 0:
         errbox("\n\n".join(getFehler()))
     if len(getHinweis()) > 0:
-        printlog("\n\n".join(getHinweis())) 
+        hinweislog("\n\n".join(getHinweis())) 
     uiParent.SetAktionGesSchritte(2)
     uiParent.SetAktionText("Darstellung einschalten" )
     uiParent.SetAktionAktSchritt(1)

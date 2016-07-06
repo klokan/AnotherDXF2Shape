@@ -2,6 +2,9 @@
 """
 /***************************************************************************
  uiADXF2Shape
+    Änderungen V0.3:
+        06.07.16:
+            - OGR-Version anzeigen
                                  A QGIS plugin
  KonverDXF to shape and add to QGIS
                              -------------------
@@ -29,7 +32,11 @@ from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from fnc4all import *
 from clsDXFTools import StartImport
 import clsADXF2Shape
-
+try:
+   import gdal
+except:
+   pass
+ 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'uiADXF2Shape.ui'))
 from PyQt4.QtCore import QObject, QEvent
@@ -59,6 +66,100 @@ class QLineEditDropHandler(QObject):
         
 
 class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
+    charsetList = ["System",
+     "ascii",
+     "big5",
+     "big5hkscs",
+     "cp037",
+     "cp424",
+     "cp437",
+     "cp500",
+     "cp720",
+     "cp737",
+     "cp775",
+     "cp850",
+     "cp852",
+     "cp855",
+     "cp856",
+     "cp857",
+     "cp858",
+     "cp860",
+     "cp861",
+     "cp862",
+     "cp863",
+     "cp864",
+     "cp865",
+     "cp866",
+     "cp869",
+     "cp874",
+     "cp875",
+     "cp932",
+     "cp949",
+     "cp950",
+     "cp1006",
+     "cp1026",
+     "cp1140",
+     "cp1250",
+     "cp1251",
+     "cp1252",
+     "cp1253",
+     "cp1254",
+     "cp1255",
+     "cp1256",
+     "cp1257",
+     "cp1258",
+     "euc_jp",
+     "euc_jis_2004",
+     "euc_jisx0213",
+     "euc_kr",
+     "gb2312",
+     "gbk",
+     "gb18030",
+     "hz",
+     "iso2022_jp",
+     "iso2022_jp_1",
+     "iso2022_jp_2",
+     "iso2022_jp_2004",
+     "iso2022_jp_3",
+     "iso2022_jp_ext",
+     "iso2022_kr",
+     "latin_1",
+     "iso8859_2",
+     "iso8859_3",
+     "iso8859_4",
+     "iso8859_5",
+     "iso8859_6",
+     "iso8859_7",
+     "iso8859_8",
+     "iso8859_9",
+     "iso8859_10",
+     "iso8859_13",
+     "iso8859_14",
+     "iso8859_15",
+     "iso8859_16",
+     "johab",
+     "koi8_r",
+     "koi8_u",
+     "mac_cyrillic",
+     "mac_greek",
+     "mac_iceland",
+     "mac_latin2",
+     "mac_roman",
+     "mac_turkish",
+     "ptcp154",
+     "shift_jis",
+     "shift_jis_2004",
+     "shift_jisx0213",
+     "System",
+     "utf_32",
+     "utf_32_be",
+     "utf_32_le",
+     "utf_16",
+     "utf_16_be",
+     "utf_16_le",
+     "utf_7",
+     "utf_8",
+     "utf_8_sig"]
     def __init__(self, parent=None):
         """Constructor."""
         super(uiADXF2Shape, self).__init__(parent)
@@ -105,23 +206,30 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         # Letzte Werte lesen
         s = QSettings( "EZUSoft", "ADXF2Shape" )
         
-        bGenCol = True if s.value( "bGenCol", "Ja" ) == "Ja" else False
+        bGenCol = True if s.value( "bGenCol", "Nein" ) == "Ja" else False
         self.chkCol.setChecked(bGenCol)
 
-        bGenLay = True if s.value( "bGenLay", "Nein" ) == "Ja" else False
+        bGenLay = True if s.value( "bGenLay", "Ja" ) == "Ja" else False
         self.chkLay.setChecked(bGenLay)
         
         bGenSHP = True if s.value( "bGenSHP", "Nein" ) == "Ja" else False
         self.chkSHP.setChecked(bGenSHP)
         self.chkSHP_clicked()
+        
+        iCodePage=s.value( "iCodePage", 0 ) 
 
         self.txtHoe.setText(s.value( "dblHoe", '2' ))
         
         self.cbUnit.addItem(self.tr("Map unit"))
         self.cbUnit.addItem(self.tr("Millimeter"))
+        self.cbCharSet.addItems(self.charsetList)
         iUnit=s.value( "iUnit", 0 )
         self.cbUnit.setCurrentIndex(int(iUnit)) # unter Linux war/ist Int() notwendig
-
+        self.cbCharSet.setCurrentIndex(int(iCodePage))
+        try:
+            self.lbGDAL.setText(gdal.VersionInfo("GDAL_RELEASE_DATE"))
+	except:
+   	    self.lbGDAL.setText("-")
 
         # Drag & Drop Event
         if not fncDebugMode():
@@ -189,6 +297,8 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         s.setValue( "bGenSHP", "Ja" if self.chkSHP.isChecked() == True else "Nein")
         s.setValue( "dblHoe", str(self.txtHoe.text()))
         s.setValue( "iUnit", self.cbUnit.currentIndex())
+        s.setValue( "iCodePage", self.cbCharSet.currentIndex())
+        
     
     def btnStart_clicked(self):
         Antw=self.StartImport()
@@ -235,7 +345,8 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         self.OptSpeichern()
         #           (DXFDatNam,shpPfad,  bSHPSave,                fontSize, fontSizeInMapUnits, bCol,bLayer)
         #self.FormRunning(True)
-        Antw = StartImport (self,AktDat,   ZielPfad, self.chkSHP.isChecked(), dblHoe, self.cbUnit.currentIndex() == 0, self.chkCol.isChecked(),self.chkLay.isChecked())
+
+        Antw = StartImport (self,AktDat,   ZielPfad, self.chkSHP.isChecked(), self.cbCharSet.currentText(), dblHoe, self.cbUnit.currentIndex() == 0, self.chkCol.isChecked(),self.chkLay.isChecked())
         self.FormRunning(False)
    
     def SetAktionText(self,txt):
@@ -259,6 +370,7 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         Anz(self.btnStart) 
         Anz(self.txtHoe)
         Anz(self.cbUnit)
+        Anz(self.cbCharSet)
         Anz(self.button_box.button(QDialogButtonBox.Close))
         Anz(self.browseDXFDatei)
         Anz(self.browseZielPfad)
@@ -270,6 +382,7 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         Anz(self.lbDXF)
         Anz(self.lbSHP)
         Anz(self.lbFont)
+        Anz(self.lblCharSet)
 
 
         if bRun:

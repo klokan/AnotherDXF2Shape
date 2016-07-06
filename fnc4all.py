@@ -163,6 +163,14 @@ def debuglog(text,p=None):
         except:
             pass
 
+def hinweislog(text,p=None):
+        su=text
+        if type(text) == str:
+            su=text.decode("utf8")   
+        try:
+            QgsMessageLog.logMessage( su, 'AXF2Shape:Comments' )
+        except:
+            pass
 def fncBrowserID():
     s = QSettings( "EZUSoft", "ADXF2Shape" )
     s.setValue( "-id-", fncXOR(("ADXF2ShapeID=%02i%02i%02i%02i%02i%02i") % (time.localtime()[0:6])) )

@@ -10,12 +10,18 @@
 name=Another DXF Importer / DXF2Shape Converter
 qgisMinimumVersion=2.8
 description=Add DXF to QGIS and convert DXF to Shape
-version=0.2
-changelog=29.06.2016 V0.2
+version=0.3
+changelog=04.07.2016
+        - Remove empty Layers (empty Shapes)
+        - support codepage (charset)
+	- every kind of conversion ( by options) has a own projectname in QGIS-tree
+        - convert non-convertible 3D blocks in 2D
+
+        29.06.2016 V0.3
         - Adjustments for languages
         - Customize menu
           
-           27.06.2016 V0.1:
+        27.06.2016 V0.1:
 	-  release first version
           
 
