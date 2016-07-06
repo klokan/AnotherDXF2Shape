@@ -1,34 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="2.0" language="de_DE" sourcelanguage="">
+<!DOCTYPE TS>
+<TS version="2.1" language="de_DE">
 <context>
     <name>@default</name>
     <message>
-        <location filename="../clsDXFTools.py" line="129"/>
+        <location filename="../clsDXFTools.py" line="148"/>
         <source>Overwriting the following files</source>
         <translation>Bestehende Dateien überschreiben</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="140"/>
+        <location filename="../clsDXFTools.py" line="159"/>
         <source>Error deleting file</source>
         <translation>Datei(en) konnten nicht gelöscht werden</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="224"/>
+        <location filename="../clsDXFTools.py" line="246"/>
         <source>Cancel</source>
         <translation>Abbruch</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="224"/>
+        <location filename="../clsDXFTools.py" line="246"/>
         <source>Pleace set target</source>
         <translation>Zielverzeichnis festlegen</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="233"/>
+        <location filename="../clsDXFTools.py" line="264"/>
         <source>Edit Entity: </source>
         <translation>Bearbeite Entity: </translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="261"/>
+        <location filename="../clsDXFTools.py" line="292"/>
         <source>Creation &apos;</source>
         <translation>Erstellung &apos;</translation>
     </message>
@@ -49,7 +50,7 @@
         <translation>konnte nicht erstellt werden</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="168"/>
+        <location filename="../clsDXFTools.py" line="186"/>
         <source>Copy DXF-File</source>
         <translation>DXF-Datei kopieren</translation>
     </message>
@@ -139,17 +140,17 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>clsADXF2Shape</name>
     <message>
-        <location filename="../clsADXF2Shape.py" line="190"/>
+        <location filename="../clsADXF2Shape.py" line="188"/>
         <source>&amp;DXF Import/Convert</source>
         <translation>&amp;DXF Import/Konvertierung</translation>
     </message>
     <message>
-        <location filename="../clsADXF2Shape.py" line="174"/>
+        <location filename="../clsADXF2Shape.py" line="172"/>
         <source>Import or Convert</source>
         <translation>Importieren/Konvertieren</translation>
     </message>
     <message>
-        <location filename="../clsADXF2Shape.py" line="180"/>
+        <location filename="../clsADXF2Shape.py" line="178"/>
         <source>About/Help</source>
         <translation>Über das Programm/Hilfe</translation>
     </message>
@@ -162,129 +163,144 @@ p, li { white-space: pre-wrap; }
         <translation>EZUSoft: DXF Import / DXF2Shape Konverter</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.ui" line="131"/>
+        <location filename="../uiADXF2Shape.ui" line="135"/>
         <source>Input DXF-File</source>
         <translation>DXF Quelldatei</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.ui" line="149"/>
+        <location filename="../uiADXF2Shape.ui" line="153"/>
         <source>select a DXF-file</source>
         <translation>wähle eine DXF</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.ui" line="188"/>
+        <location filename="../uiADXF2Shape.ui" line="198"/>
         <source>.. per code ...</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.ui" line="195"/>
+        <location filename="../uiADXF2Shape.ui" line="205"/>
         <source>Save as shape-files</source>
         <translation>Shape-Dateien speichern</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.ui" line="217"/>
+        <location filename="../uiADXF2Shape.ui" line="227"/>
         <source>...code ...</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.ui" line="253"/>
+        <location filename="../uiADXF2Shape.ui" line="269"/>
         <source>Import</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.ui" line="291"/>
+        <location filename="../uiADXF2Shape.ui" line="409"/>
         <source>TextLabel</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.ui" line="69"/>
-        <source>use geometry collection</source>
+        <location filename="../uiADXF2Shape.ui" line="72"/>
+        <source>use geometry collection
+(some elements may be lost)</source>
         <translation>Geometriecollektion
-(Blöcke/Signaturen)
-separat ausspielen</translation>
+separat ausspielen
+(einige Elemnete könnten fehlen)</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.ui" line="88"/>
+        <location filename="../uiADXF2Shape.ui" line="92"/>
         <source>group layer
 (takes a long time)</source>
         <translation>Layer einzeln gruppieren
 (zeitaufwändig)</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.ui" line="304"/>
+        <location filename="../uiADXF2Shape.ui" line="320"/>
         <source>Font size for labeling</source>
         <translation>Textgröße für Beschriftungen</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.ui" line="233"/>
+        <location filename="../uiADXF2Shape.ui" line="249"/>
         <source>Browse</source>
         <translation>Durchsuche</translation>
+    </message>
+    <message>
+        <location filename="../uiADXF2Shape.ui" line="386"/>
+        <source>Charset</source>
+        <translation>Zeichensatz</translation>
+    </message>
+    <message>
+        <location filename="../uiADXF2Shape.ui" line="66"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If this option is enabled, merging blocks will convert into a geometry collection.&lt;/p&gt;&lt;p&gt;If there is a symbol of the polygon &lt;span style=&quot; font-weight:600;&quot;&gt;and&lt;/span&gt; line can not be generated by this symbol, because ESRI shapefiles can only store one kind of geometry per layer.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished">&lt;html&gt;&lt;head/&gt;&lt;body&gt;Ist diese Option aktiviert, dann wird versucht, Geometieblöcke (z.B. Signaturen und Schraffuren) 
+als zusammenhängende Objekte zu erzeugen.&lt;br&gt;Besteht aber z.B eine Signatur/Symbol aus einem Polygon 
+(z.B. gefüllter Kreis) und einer Linie, dann kann dieses Symbol auf Grund der unterschiedlichen 
+Geometrietypen nicht generiert werden.
+&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
 </context>
 <context>
     <name>uiADXF2Shape</name>
     <message>
-        <location filename="../uiADXF2Shape.py" line="120"/>
+        <location filename="../uiADXF2Shape.py" line="219"/>
         <source>Map unit</source>
         <translation>Karteneinheiten</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="121"/>
+        <location filename="../uiADXF2Shape.py" line="220"/>
         <source>Millimeter</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="155"/>
+        <location filename="../uiADXF2Shape.py" line="257"/>
         <source>Specify destination path</source>
         <translation>Zielpfad für Shapes festlegen</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="156"/>
+        <location filename="../uiADXF2Shape.py" line="258"/>
         <source>Output shape path</source>
         <translation>Shape Zielpfad</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="201"/>
+        <location filename="../uiADXF2Shape.py" line="305"/>
         <source>DXF-file not selected</source>
         <translation>DXF Datei nicht festgelegt</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="201"/>
+        <location filename="../uiADXF2Shape.py" line="305"/>
         <source>Please specify a DXF-File</source>
         <translation>DXF Datei auswählen</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="204"/>
+        <location filename="../uiADXF2Shape.py" line="308"/>
         <source>DXF-file not found</source>
         <translation>DXF-Datei nicht gefunden</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="215"/>
+        <location filename="../uiADXF2Shape.py" line="319"/>
         <source>Destination path not selected</source>
         <translation>Zielpfad nicht festgelegt</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="220"/>
+        <location filename="../uiADXF2Shape.py" line="324"/>
         <source>Destination path not found</source>
         <translation>Zielpfad nicht gefunden</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="231"/>
+        <location filename="../uiADXF2Shape.py" line="335"/>
         <source>Reset text height</source>
         <translation>Texthöhe zurückgesetzt</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="227"/>
+        <location filename="../uiADXF2Shape.py" line="331"/>
         <source>Text height can not assume a zero value</source>
         <translation>Texthöhe darf nicht Null sein</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="231"/>
+        <location filename="../uiADXF2Shape.py" line="335"/>
         <source>Error converting text to numbers</source>
         <translation>Fehler bei der Umwandlung in eine Zahl</translation>
     </message>
     <message>
-        <location filename="../uiADXF2Shape.py" line="215"/>
+        <location filename="../uiADXF2Shape.py" line="319"/>
         <source>Please specify a target path for shapes</source>
         <translation>Bitte das Zielverzeichnis fürdie Shapes festlegen</translation>
     </message>
