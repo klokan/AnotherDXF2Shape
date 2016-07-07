@@ -2,8 +2,9 @@
 """
 /***************************************************************************
  clsDXFTools
-    Änderungen V0.3:
-        06.07.16:
+    Änderungen V0.3.1:
+        07.07.16:
+            - Codepage auch bei Layerstruktur
             - shapes ohne Koordinaten aussortieren
             - jede Konvertierungsart mit Einzelprojekt (bisher 2 jetzt 4)
             - Auswahl eines CharSet (codepage)
@@ -331,6 +332,10 @@ def StartImport(uiParent,DXFDatNam,shpPfad,  bSHPSave, sCharSet, fontSize, fontS
                         uiParent.SetAktionAktSchritt(zL)
                         zL=zL+1
                         Layer = QgsVectorLayer(shpdat, AktLayerNam+'('+v[0]+')',"ogr")
+                        # vermutlich reicht einer der beiden Befehle
+                        # unbekannte Codepages werden zu "System"
+                        Layer.setProviderEncoding(sCharSet)
+                        Layer.dataProvider().setEncoding(sCharSet)   
                         Layer.setSubsetString( "Layer = '" + AktLayerNam + "'" )
                         QgsMapLayerRegistry.instance().addMapLayer(Layer)
                         #print 'Layer = "' + AktLayerNam + '"'
