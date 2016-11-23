@@ -206,13 +206,55 @@ def fncXOR(message, key=None):
         key=fncDateCode()
     return  ''.join(("%0.1X" % (ord(c)^ord(k))).zfill(2) for c,k in izip(message, cycle(key)))
 
+def ifAscii(uText):
+    try:
+        for char in uText:
+            if(ord(char))> 128:
+              return False   
+        return True
+    except:
+        return False 
+    
+def toUTF8(uText):
+    # 06.10.2016:
+    # Diese Funktion ist die Lösung für ein ganz übles Problem
+    # Beim Auslesen der PG-Datenbank kommt es zufällig und nicht wiederholbar zu Problemen mit Umlauten (UniCode)
+    # Aus unersichtlichen Gründen wird manchmal kein Ansiwert sondern UTF-8 übergeben
+    # z.B: STPL-F_FussgÃ¤ngerzone, STPL-T_StraÃenbahnLinie,STPL-T_FÃ¶rderschule50000
+    #
+    # da hier bei der Ausgabe auch die jeweilige Console eine Rolle spielt, konnte die Ursache 
+    # nicht gefunden werden
+    try:
+        a=""
+        for char in uText:
+            a= a + chr(ord(char))
+        return a.decode("utf8")
+    except:
+        return uText    
 
     
 
 if __name__ == "__main__":
+    print (ifAscii('äjfj'))
+    """
     print EZUTempDir()
     print EZUTempClear(True)
+    import sys
+    from PyQt4.QtGui import *
 
+    app = QApplication(sys.argv)
+
+    listWidget = QListWidget()
+
+    for i in range(10):
+        item = QListWidgetItem("Item %i" % i)
+        listWidget.addItem(item)
+    for i in xrange(listWidget.count()):
+        AktDat=listWidget.item(i)
+        print AktDat.text()
+    listWidget.show()
+    sys.exit(app.exec_())
+    """
 
 
 

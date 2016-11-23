@@ -2,6 +2,11 @@
 """
 /***************************************************************************
  uiADXF2Shape
+    Änderungen V0.4:
+        23.11.16:
+            - Stapelimport integriert
+            - Textformatierungen optional umsetzen
+            
     Änderungen V0.3:
         06.07.16:
             - OGR-Version anzeigen
@@ -25,13 +30,15 @@
 """
 
 from qgis.utils import os, sys
-from PyQt4.QtCore import QSettings
+from PyQt4.QtCore import QSettings,QSize
 from PyQt4 import QtGui, uic
 from PyQt4.QtGui import QMessageBox, QDialogButtonBox
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from fnc4all import *
-from clsDXFTools import StartImport
+from clsDXFTools import DXFImporter
 import clsADXF2Shape
+
+# Programm funktioniert auch ohne installierte gdal-Bibliothek, die Bibo wird nur zur Anzeige der Version genommen
 try:
    import gdal
 except:
@@ -41,7 +48,10 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'uiADXF2Shape.ui'))
 from PyQt4.QtCore import QObject, QEvent
 
+"""
+    23.11.16: D&D deaktiviert
 class QLineEditDropHandler(QObject):
+
     def __init__(self, parent=None):
         QObject.__init__(self, parent)
 
@@ -63,7 +73,7 @@ class QLineEditDropHandler(QObject):
                     break
             event.accept()
         return QObject.eventFilter(self, obj, event)
-        
+"""        
 
 class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
     charsetList = ["System",
@@ -212,6 +222,9 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         bGenLay = True if s.value( "bGenLay", "Ja" ) == "Ja" else False
         self.chkLay.setChecked(bGenLay)
         
+        bFormatText = True if s.value( "bFormatText", "Ja" ) == "Ja" else False
+        self.chkHideFormat.setChecked(bFormatText)
+        
         bGenSHP = True if s.value( "bGenSHP", "Nein" ) == "Ja" else False
         self.chkSHP.setChecked(bGenSHP)
         self.chkSHP_clicked()
@@ -228,15 +241,22 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         self.cbCharSet.setCurrentIndex(int(iCodePage))
         try:
             self.lbGDAL.setText(gdal.VersionInfo("GDAL_RELEASE_DATE"))
-	except:
-   	    self.lbGDAL.setText("-")
-
+        except:
+            self.lbGDAL.setText("-")
+        self.StartHeight=self.height()
+        self.StartMinHeight=self.minimumHeight()
         # Drag & Drop Event
-        if not fncDebugMode():
+        #if not fncDebugMode():
             # Kommt bei Programmfehleren immer wieder zu komischen Effekten/Abstüzen - deshalb wärend der Entwicklung deaktivieren
-            self.txtDXFDatNam.installEventFilter(QLineEditDropHandler(self))
-            self.txtZielPfad.installEventFilter(QLineEditDropHandler(self))
-
+            # 23.11.16: D&D deaktiviert, da nicht sichergestellt werden kann, dass alle Dateien aus einem Verzeichnis kommen
+            #               und der Anpassungsaufwand im Moment nicht lohnt
+            #self.listDXFDatNam.installEventFilter(QLineEditDropHandler(self))
+            #self.txtZielPfad.installEventFilter(QLineEditDropHandler(self))
+            
+        listEmpty = self.tr("no DXF-file selected")
+        self.listDXFDatNam.addItem (listEmpty)
+        self.listDXFDatNam.setEnabled(False)  
+        self.listEmpty=listEmpty
         self.FormRunning(False)
     # noinspection PyMethodMayBeStatic
     
@@ -266,15 +286,47 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
             self.txtZielPfad.setPlaceholderText("") 
             self.lbSHP.setText("") 
     
+         
     def browseDXFDatei_clicked(self):
         s = QSettings( "EZUSoft", "ADXF2Shape" )
         lastDXFDir = s.value("lastDXFDir", ".")
+        """
         DXFDatName = QtGui.QFileDialog.getOpenFileName(self, 'Open File', lastDXFDir, 'DXF  (*.dxf)')
         self.txtDXFDatNam.setText(DXFDatName)
         (dxfDir, dxfFile) = os.path.split(DXFDatName)
         if dxfDir <> "":
             s.setValue("lastDXFDir", dxfDir)
-    
+        """
+        MerkAnz=self.listDXFDatNam.count()
+        Anz=0
+        for DXFDatName in QtGui.QFileDialog.getOpenFileNames(self, 'Open File', lastDXFDir, 'DXF  (*.dxf)'):
+            DXFDatName=(DXFDatName).replace("\\","/")
+            if Anz == 0:
+                # im Gegensatz zu getOpenFileName() gibt getOpenFileNames Backslash's zurück
+                self.listDXFDatNam.clear()
+                self.listDXFDatNam.setEnabled(True)     
+                (dxfDir, dxfFile) = os.path.split(DXFDatName)
+                if dxfDir <> "":
+                    s.setValue("lastDXFDir", dxfDir) 
+                #für Übergang    
+                #printlog (DXFDatName)
+                #self.txtDXFDatNam.setText(DXFDatName)
+            Anz=Anz+1        
+            self.listDXFDatNam.addItem(DXFDatName) 
+            MerkAnz=Anz
+        
+        if MerkAnz > 1:
+            #self.listDXFDatNam.setMaximumHeight(1000)
+            self.listDXFDatNam.setMinimumHeight(40)
+            self.setMinimumHeight = self.StartMinHeight+150
+            if self.height() < self.StartHeight+150:
+                self.resize(self.width(),self.StartHeight+150)
+        else:
+            self.listDXFDatNam.setMinimumHeight(20)
+            self.setMinimumHeight = self.StartMinHeight
+            #self.resize(self.width(),self.StartHeight)
+        
+
     def browseZielPfad_clicked(self):
         s = QSettings( "EZUSoft", "ASHP2Shape" )
         lastSHPDir = s.value("lastSHPDir", ".")
@@ -283,7 +335,7 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
             lastSHPDir=os.getcwd()    
         flags = QtGui.QFileDialog.DontResolveSymlinks | QtGui.QFileDialog.ShowDirsOnly
         shpDirName = QtGui.QFileDialog.getExistingDirectory(self, "Open Directory",lastSHPDir,flags)
-
+        shpDirName=shpDirName.replace("\\","/")
         self.txtZielPfad.setText(shpDirName)
         #SHPDir, Dummy = os.path.split(shpDirName)
         #print "'" + SHPDir + "'" + "*"+"'" + Dummy + "'"
@@ -295,31 +347,34 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         s.setValue( "bGenCol", "Ja" if self.chkCol.isChecked() == True else "Nein")
         s.setValue( "bGenLay", "Ja" if self.chkLay.isChecked() == True else "Nein")
         s.setValue( "bGenSHP", "Ja" if self.chkSHP.isChecked() == True else "Nein")
+        s.setValue( "bFormatText", "Ja" if self.chkHideFormat.isChecked() == True else "Nein")
+        
+        
         s.setValue( "dblHoe", str(self.txtHoe.text()))
         s.setValue( "iUnit", self.cbUnit.currentIndex())
         s.setValue( "iCodePage", self.cbCharSet.currentIndex())
         
     
     def btnStart_clicked(self):
-        Antw=self.StartImport()
+        # 0. Test ob eine DXF gewählt
+        if self.listDXFDatNam.count() == 0 or (self.listDXFDatNam.count() == 1 and self.listDXFDatNam.item(0).text() == self.listEmpty):
+            QMessageBox.critical(None,  self.tr("Please specify a DXF-File"),self.tr(u"DXF-file not selected")) 
+            return
 
- 
-    def StartImport (self):
-        # 1. Test ob dxf lesbar
-        AktDat=self.txtDXFDatNam.text()
-        if AktDat == "":
-            QMessageBox.critical(None,  self.tr(u"DXF-file not selected"), self.tr("Please specify a DXF-File")) 
-            return
-        if not os.path.exists(AktDat):
-            QMessageBox.critical(None,self.tr(u"DXF-file not found"), AktDat )
-            return
+        # 1. Test ob alle dxf lesbar
+        #allDXFDat = self.listDXFDatNam('', Qt.MatchRegExp)
+        for i in xrange(self.listDXFDatNam.count()):
+            AktDat=self.listDXFDatNam.item(i).text()
+            if not os.path.exists(AktDat):
+                QMessageBox.critical(None,self.tr(u"DXF-file not found"), AktDat )
+                return
+
 
         # 2. Test ob ZielPfad vorhanden
         if self.chkSHP.isChecked():
             ZielPfad=self.txtZielPfad.text()
         else:
             ZielPfad=EZUTempDir()
-
             
         if ZielPfad == "":
             QMessageBox.critical(None, self.tr("Destination path not selected"), self.tr("Please specify a target path for shapes")) 
@@ -346,9 +401,13 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         #           (DXFDatNam,shpPfad,  bSHPSave,                fontSize, fontSizeInMapUnits, bCol,bLayer)
         #self.FormRunning(True)
 
-        Antw = StartImport (self,AktDat,   ZielPfad, self.chkSHP.isChecked(), self.cbCharSet.currentText(), dblHoe, self.cbUnit.currentIndex() == 0, self.chkCol.isChecked(),self.chkLay.isChecked())
-        self.FormRunning(False)
-   
+        #printlog (AktDat)
+        #printlog (self.txtDXFDatNam.text())
+        #return
+    
+        Antw = DXFImporter (self, self.listDXFDatNam, ZielPfad, self.chkSHP.isChecked(), self.cbCharSet.currentText(), dblHoe, self.cbUnit.currentIndex() == 0, self.chkCol.isChecked(),self.chkLay.isChecked(), self.chkHideFormat.isChecked())
+        self.FormRunning(False) # nur sicherheitshalber, falls in DXFImporter übersprungen/vergessen
+        
     def SetAktionText(self,txt):
         self.lbAktion.setText(txt)
         self.repaint()   
@@ -361,12 +420,27 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         self.repaint()
         #QMessageBox.information(None, ("maximum gesetzt"), str(ges))
     
+    def SetDatAktionText(self,txt):
+        self.lbDatAktion.setText(txt)
+        self.repaint()   
+    def SetDatAktionAktSchritt(self,akt):
+        self.pgDatBar.setValue(akt)
+        self.repaint()
+        #QMessageBox.information(None, ("aktuell gesetzt"), str(akt))
+    def SetDatAktionGesSchritte(self,ges):
+        self.pgDatBar.setMaximum(ges)
+        self.repaint()
+        #QMessageBox.information(None, ("maximum gesetzt"), str(ges))
+
     def FormRunning(self,bRun):
         def Anz(ctl):
             if bRun:
                 ctl.hide()
             else:
                 ctl.show()
+        Anz(self.lbFormat)
+        Anz(self.chkHideFormat)
+        Anz(self.lbGDAL) 
         Anz(self.btnStart) 
         Anz(self.txtHoe)
         Anz(self.cbUnit)
@@ -374,7 +448,7 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         Anz(self.button_box.button(QDialogButtonBox.Close))
         Anz(self.browseDXFDatei)
         Anz(self.browseZielPfad)
-        Anz(self.txtDXFDatNam)
+        Anz(self.listDXFDatNam)
         Anz(self.txtZielPfad)
         Anz(self.chkCol)
         Anz(self.chkLay)
@@ -391,12 +465,18 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
             self.lbAktion.show()
             self.pgBar.setValue(0) 
             self.AktSchritt = 0 
+            self.pgDatBar.show()
+            self.lbDatAktion.show()
+            self.pgDatBar.setValue(0) 
+            self.AktDatSchritt = 0 
             # eventuell Shape aktivieren
             self.chkSHP_clicked()
         else:
             self.lbIcon.hide()
             self.pgBar.hide()
             self.lbAktion.hide()
+            self.pgDatBar.hide()
+            self.lbDatAktion.hide()
 
     def RunMenu(self):
         self.exec_()
