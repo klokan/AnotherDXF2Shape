@@ -8,7 +8,8 @@ Features:
       - Display of text (Labeling)
       - Categorization by Layer
       - Group by Layer
-      - Separate representation by layers possible
+      - multiple files can be imported at the same time (batch import) 
+      - MTEXT formatting code will hided and underlined lines are converted
       
 
 Usage:
