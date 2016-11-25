@@ -3,27 +3,22 @@
 <context>
     <name>@default</name>
     <message>
-        <location filename="../clsDXFTools.py" line="160"/>
+        <location filename="../clsDXFTools.py" line="171"/>
         <source>Overwriting the following files</source>
         <translation>Bestehende Dateien überschreiben</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="238"/>
+        <location filename="../clsDXFTools.py" line="249"/>
         <source>Cancel</source>
         <translation>Abbruch</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="238"/>
-        <source>Pleace set target</source>
-        <translation>Zielverzeichnis festlegen</translation>
-    </message>
-    <message>
-        <location filename="../clsDXFTools.py" line="309"/>
+        <location filename="../clsDXFTools.py" line="336"/>
         <source>Edit Entity: </source>
         <translation>Bearbeite Entity: </translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="412"/>
+        <location filename="../clsDXFTools.py" line="442"/>
         <source>Creation &apos;</source>
         <translation>Erstellung &apos;</translation>
     </message>
@@ -44,24 +39,39 @@
         <translation>konnte nicht erstellt werden</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="298"/>
+        <location filename="../clsDXFTools.py" line="325"/>
         <source>Copy DXF-File</source>
         <translation>DXF-Datei kopieren</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="153"/>
+        <location filename="../clsDXFTools.py" line="164"/>
         <source>DSDB:file remove error</source>
         <translation>DSDB:Datei kann nicht gelöscht werden</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="171"/>
+        <location filename="../clsDXFTools.py" line="182"/>
         <source>DZD:file remove error</source>
         <translation>DZD:Datei kann nicht gelöscht werden</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="256"/>
+        <location filename="../clsDXFTools.py" line="283"/>
         <source>Import: </source>
         <translation>Import:</translation>
+    </message>
+    <message>
+        <location filename="../clsDXFTools.py" line="249"/>
+        <source>Please set target</source>
+        <translation>Bitte Ziel festlegen</translation>
+    </message>
+    <message>
+        <location filename="../clsDXFTools.py" line="353"/>
+        <source>process &apos;gdalogr:convertformat&apos; could not start please restart QGIS</source>
+        <translation>Prozess &apos;gdalogr:convertformat&apos; konnte nicht gestartet werden. Bitte starte QGIS neu</translation>
+    </message>
+    <message>
+        <location filename="../clsDXFTools.py" line="271"/>
+        <source>process init - please wait</source>
+        <translation>Prozessinitialisierung - Bitte warten</translation>
     </message>
 </context>
 <context>
@@ -316,7 +326,7 @@ Geometrietypen nicht generiert werden.
     <message>
         <location filename="../uiADXF2Shape.py" line="380"/>
         <source>Please specify a target path for shapes</source>
-        <translation>Bitte das Zielverzeichnis fürdie Shapes festlegen</translation>
+        <translation>Bitte das Zielverzeichnis für die Shapes festlegen</translation>
     </message>
     <message>
         <location filename="../uiADXF2Shape.py" line="256"/>
