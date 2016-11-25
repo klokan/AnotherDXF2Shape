@@ -2,7 +2,14 @@
 """
 /***************************************************************************
  clsDXFTools
-     Änderungen V0.4:
+    Änderungen V0.4.1:
+        25.11.16:
+            - Fehlerkorrektur
+              line 368, in EineDXF: NameError: global name 'bFormat' is not defined
+              line 86: strpos(Text,'\\\\\\L') --> strpos(\"Text\",'\\\\\\\\L')
+              regexp_replace(regexp_substr( "text" ,'\\;(.*)\\}' ),'\\L','')
+
+    Änderungen V0.4:
         21.11.16:
             - Kontrolle, ob Shape von Konverter erzeugt wurde
             - Stapelimport integriert
@@ -41,6 +48,7 @@ import sys
 from PyQt4.QtGui import *
 from qgis.core import *
 import processing
+from processing.core.Processing import Processing
 from qgis.utils import *
 from fnc4all import *
 
@@ -75,9 +83,12 @@ def labelingDXF (qLayer,fontSize,fontSizeInMapUnits, FormatText):
     
     
     if FormatText:
+        rStr="regexp_replace(Case When substr(\"Text\",1,1) = '{'  Then substr(Text,strpos(\"Text\",';')+1,length(\"Text\")-strpos(\"Text\",';')-1) When substr(\"Text\",1,1) = '\\\\'  Then substr(Text,strpos(\"Text\",';')+1,length(\"Text\")-strpos(\"Text\",';')) Else \"Text\" End, '%%.|\\\\\\\\.','')"
+        uStr="case when strpos(\"Text\",'\\\\\\\\L') or strpos(\"Text\",'%%u') then True  else False  end"
+        uStr="1~~1~~" + uStr + "~~"
         qLayer.setCustomProperty("labeling/isExpression","True") # wichtig, sonnst wird nix angezeigt
-        qLayer.setCustomProperty("labeling/fieldName","replace(replace(Case When substr(\"Text\",1,1) = '{'  Then substr(Text,strpos(\"Text\",';')+1,length(\"Text\")-strpos(\"Text\",';')-1) When substr(\"Text\",1,1) = '\\\\'  Then substr(Text,strpos(\"Text\",';')+1,length(\"Text\")-strpos(\"Text\",';')) Else \"Text\" End,'\\\\L',''),'%%u','')")
-        qLayer.setCustomProperty("labeling/dataDefined/Underline","1~~1~~case when strpos(Text,'\\\\\\L') or strpos(Text,'%%u') then True  else False  end~~")
+        qLayer.setCustomProperty("labeling/fieldName",rStr)
+        qLayer.setCustomProperty("labeling/dataDefined/Underline",uStr)
 
     else:
         qLayer.setCustomProperty("labeling/fieldName","Text")
@@ -235,7 +246,7 @@ def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet, fontSize, fon
                     delShp.append (shpdat)
                        
     if not DelZielDateien (delShp):
-        QMessageBox.information(None, tr("Cancel"), tr("Pleace set target"))
+        QMessageBox.information(None, tr("Cancel"), tr("Please set target"))
         return None
     
     # -----------------------------------------------------------------------------------------------    
@@ -246,7 +257,24 @@ def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet, fontSize, fon
     Antw=QgsVectorFileWriter.writeAsVectorFormat(mLay,memDat,  None, mLay.crs(), "ESRI Shapefile")
     qPrjDatName=memDat[0:-3] + 'qpj'
 
+
+    
+    # -----------------------------------------------------------------------------------------------   
+    # 3a. Initialisierung    
+    # manchmal bleibt (bei mehrfachnutzung oder bei crash) irgend etwas hängen,
+    # die beiden nachfolgenden Zeilen haben bei einem Test das Problem gefixt - konnte aber noch nicht wiederholt werden
+    # recht zeitaufwändig
     uiParent.FormRunning(True)
+    
+    
+    uiParent.SetDatAktionGesSchritte(8)
+    
+    uiParent.SetAktionText("")
+    uiParent.SetDatAktionText(tr("process init - please wait"))
+    uiParent.SetDatAktionAktSchritt(1)
+
+    Processing.initialize()
+    Processing.updateAlgsList()
 
     # -----------------------------------------------------------------------------------------------    
     # 3. Abarbeitung der Dateien
@@ -320,96 +348,99 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam,shpPfad, qPrjDa
         else:
             korrSHPDatNam=(EZUTempDir() + str(uuid.uuid4()) + '.shp')           
 
-        debuglog ('gdalogr:convertformat'+','+korrDXFDatNam +'|layername=entities'+','+ '0'+','+ opt +','+ korrSHPDatNam)
-        processing.runalg('gdalogr:convertformat',korrDXFDatNam +'|layername=entities', 0, opt , korrSHPDatNam)
+        #hinweislog ('gdalogr:convertformat'+','+korrDXFDatNam +'|layername=entities'+','+ '0'+','+ opt +','+ korrSHPDatNam)
 
-        if os.path.exists(korrSHPDatNam):      
-            if korrSHPDatNam <> shpdat:
-                # evtl. korrigierte Dateiname umbenennen
-                printlog ("move:" + korrSHPDatNam + '-->' + shpdat)
-                move(korrSHPDatNam,shpdat)
-                for rest in glob(korrSHPDatNam[0:-4] + '.*'):
-                    printlog ("move:" + rest + '-->' + shpdat[0:-4] + rest[-4:])
-                    move(rest,shpdat[0:-4] + rest[-4:])
-            
-            # ogr2ogr schreibt den EPSG-code nicht in die prj-Datei, dadurch kommt es beim Einbinden
-            # zu anderenen EPSG-Codes -> Nutzung einer qpj
-            #print qPrjDatName,shpdat[0:-3]+"qpj"
-            copyfile (qPrjDatName,shpdat[0:-3]+"qpj")
- 
-            Layer = QgsVectorLayer(shpdat, "entities"+v[0],"ogr") 
-            # vermutlich reicht einer der beiden Befehle
-            # unbekannte Codepages werden zu "System"
-            Layer.setProviderEncoding(sCharSet)
-            Layer.dataProvider().setEncoding(sCharSet)        
-            if Layer:
-                # Kontrolle, ob was sinnvolles im Layer ist. Ogr erzeugt öfters Shapes ohne Koordinaten
-                bLayerMitDaten = False
-                if Layer.featureCount() > 0:
-                    koo=Layer.extent()
-                    if koo.xMinimum() == 0 and koo.yMinimum() == 0 and koo.xMaximum() == 0 and koo.yMaximum() == 0:
-                        # das scheint ein  Ufo zu sein
-                        addHinweis("Empty coordinates for " + opt )
-                    else:
-                        bLayerMitDaten  = True
-                else:
-                    addHinweis("No entities for " + opt )
-                    
-                if bLayerMitDaten:
-                    if not bLayer:
-                        QgsMapLayerRegistry.instance().addMapLayer(Layer)
-                        iface.legendInterface().moveLayer( Layer, grpProjekt)
-                        Rend=kat4Layer(Layer)
-                        if Rend is not None:
-                            Layer.setRendererV2(Rend)
+        if processing.runalg('gdalogr:convertformat',korrDXFDatNam +'|layername=entities', 0, opt , korrSHPDatNam) is None:
+            addFehler(tr("process 'gdalogr:convertformat' could not start please restart QGIS"))
+        else:
+            if os.path.exists(korrSHPDatNam):      
+                if korrSHPDatNam <> shpdat:
+                    # evtl. korrigierte Dateiname umbenennen
+                    printlog ("move:" + korrSHPDatNam + '-->' + shpdat)
+                    move(korrSHPDatNam,shpdat)
+                    for rest in glob(korrSHPDatNam[0:-4] + '.*'):
+                        printlog ("move:" + rest + '-->' + shpdat[0:-4] + rest[-4:])
+                        move(rest,shpdat[0:-4] + rest[-4:])
+                
+                # ogr2ogr schreibt den EPSG-code nicht in die prj-Datei, dadurch kommt es beim Einbinden
+                # zu anderenen EPSG-Codes -> Nutzung einer qpj
+                #print qPrjDatName,shpdat[0:-3]+"qpj"
+                copyfile (qPrjDatName,shpdat[0:-3]+"qpj")
+     
+                Layer = QgsVectorLayer(shpdat, "entities"+v[0],"ogr") 
+                # vermutlich reicht einer der beiden Befehle
+                # unbekannte Codepages werden zu "System"
+                Layer.setProviderEncoding(sCharSet)
+                Layer.dataProvider().setEncoding(sCharSet)        
+                if Layer:
+                    # Kontrolle, ob was sinnvolles im Layer ist. Ogr erzeugt öfters Shapes ohne Koordinaten
+                    bLayerMitDaten = False
+                    if Layer.featureCount() > 0:
+                        koo=Layer.extent()
+                        if koo.xMinimum() == 0 and koo.yMinimum() == 0 and koo.xMaximum() == 0 and koo.yMaximum() == 0:
+                            # das scheint ein  Ufo zu sein
+                            addHinweis("Empty coordinates for " + opt )
                         else:
-                            addFehler ("Categorization for  " + opt + " could not be executed")
-                        if Layer.geometryType() == 0:
-                            labelingDXF (Layer,fontSize,fontSizeInMapUnits, bFormat, bFormatText)
-                        
+                            bLayerMitDaten  = True
                     else:
-                        fni = Layer.fieldNameIndex('Layer')
-                        unique_values = Layer.dataProvider().uniqueValues(fni)
-                        zL=0
-                        for AktLayerNam in unique_values:
-                            if AktLayerNam == NULL:
-                                AktLayerNam = "Null"
-                            uiParent.SetAktionGesSchritte(len(unique_values))
-                            uiParent.SetAktionText("Edit Layer: " + AktLayerNam )
-                            uiParent.SetAktionAktSchritt(zL)
-                            zL=zL+1
-                            Layer = QgsVectorLayer(shpdat, AktLayerNam+'('+v[0]+')',"ogr")
-                            # vermutlich reicht einer der beiden Befehle
-                            # unbekannte Codepages werden zu "System"
-                            Layer.setProviderEncoding(sCharSet)
-                            Layer.dataProvider().setEncoding(sCharSet)   
-                            Layer.setSubsetString( "Layer = '" + AktLayerNam + "'" )
+                        addHinweis("No entities for " + opt )
+                        
+                    if bLayerMitDaten:
+                        if not bLayer:
                             QgsMapLayerRegistry.instance().addMapLayer(Layer)
-                            #print 'Layer = "' + AktLayerNam + '"'
-                            #iface.mapCanvas().setRenderFlag( True )
-                            #return
-                            if AktLayerNam not in myGroups:
-                                gL = iface.legendInterface().addGroup( AktLayerNam, False,grpProjekt)
-                                myGroups[AktLayerNam]=gL
-                                #print myGroups
-                                iface.legendInterface().setGroupExpanded( gL, False )
-                                iface.legendInterface().moveLayer( Layer, gL)
+                            iface.legendInterface().moveLayer( Layer, grpProjekt)
+                            Rend=kat4Layer(Layer)
+                            if Rend is not None:
+                                Layer.setRendererV2(Rend)
                             else:
-                                iface.legendInterface().moveLayer( Layer, myGroups[AktLayerNam])
-                            
+                                addFehler ("Categorization for  " + opt + " could not be executed")
                             if Layer.geometryType() == 0:
-                                symbol = QgsSymbolV2.defaultSymbol(Layer.geometryType())
-                                symbol.setSize( 0.1 )
-                                Layer.setRendererV2(QgsSingleSymbolRendererV2( symbol ) )                   
                                 labelingDXF (Layer,fontSize,fontSizeInMapUnits, bFormatText)
+                                
+                            
+                        else:
+                            fni = Layer.fieldNameIndex('Layer')
+                            unique_values = Layer.dataProvider().uniqueValues(fni)
+                            zL=0
+                            for AktLayerNam in unique_values:
+                                if AktLayerNam == NULL:
+                                    AktLayerNam = "Null"
+                                uiParent.SetAktionGesSchritte(len(unique_values))
+                                uiParent.SetAktionText("Edit Layer: " + AktLayerNam )
+                                uiParent.SetAktionAktSchritt(zL)
+                                zL=zL+1
+                                Layer = QgsVectorLayer(shpdat, AktLayerNam+'('+v[0]+')',"ogr")
+                                # vermutlich reicht einer der beiden Befehle
+                                # unbekannte Codepages werden zu "System"
+                                Layer.setProviderEncoding(sCharSet)
+                                Layer.dataProvider().setEncoding(sCharSet)   
+                                Layer.setSubsetString( "Layer = '" + AktLayerNam + "'" )
+                                QgsMapLayerRegistry.instance().addMapLayer(Layer)
+                                #print 'Layer = "' + AktLayerNam + '"'
+                                #iface.mapCanvas().setRenderFlag( True )
+                                #return
+                                if AktLayerNam not in myGroups:
+                                    gL = iface.legendInterface().addGroup( AktLayerNam, False,grpProjekt)
+                                    myGroups[AktLayerNam]=gL
+                                    #print myGroups
+                                    iface.legendInterface().setGroupExpanded( gL, False )
+                                    iface.legendInterface().moveLayer( Layer, gL)
+                                else:
+                                    iface.legendInterface().moveLayer( Layer, myGroups[AktLayerNam])
+                                
+                                if Layer.geometryType() == 0:
+                                    symbol = QgsSymbolV2.defaultSymbol(Layer.geometryType())
+                                    symbol.setSize( 0.1 )
+                                    Layer.setRendererV2(QgsSingleSymbolRendererV2( symbol ) )                   
+                                    labelingDXF (Layer,fontSize,fontSizeInMapUnits, bFormatText)
+                    else:
+                        Layer=None # um Datei löschen zu ermöglichen
+                        if not DelShapeDatBlock(shpdat):
+                            DelShapeDatBlock(shpdat)
                 else:
-                    Layer=None # um Datei löschen zu ermöglichen
-                    if not DelShapeDatBlock(shpdat):
-                        DelShapeDatBlock(shpdat)
-            else:
-                addFehler ("Option " + opt + " could not be executed")
-        else:  
-            addFehler(tr("Creation '" + shpdat + "' failed. Pleace look to the QGIS log message panel (OGR)"))
+                    addFehler ("Option " + opt + " could not be executed")
+            else:  
+                addFehler(tr("Creation '" + shpdat + "' failed. Please look to the QGIS log message panel (OGR)"))
 
     if len(getFehler()) > 0:
         errbox("\n\n".join(getFehler()))
