@@ -223,21 +223,24 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         self.chkLay.setChecked(bGenLay)
         
         bFormatText = True if s.value( "bFormatText", "Ja" ) == "Ja" else False
-        self.chkHideFormat.setChecked(bFormatText)
+        self.chkUseTextFormat.setChecked(bFormatText)
+        
+        bUseColor4Point = True if s.value( "bUseColor4Point", "Ja" ) == "Ja" else False
+        self.chkUseColor4Point.setChecked(bUseColor4Point)
+        bUseColor4Line = True if s.value( "bUseColor4Line", "Ja" ) == "Ja" else False
+        self.chkUseColor4Line.setChecked(bUseColor4Line)
+        bUseColor4Poly = True if s.value( "bUseColor4Poly", "Nein" ) == "Ja" else False
+        self.chkUseColor4Poly.setChecked(bUseColor4Poly)
         
         bGenSHP = True if s.value( "bGenSHP", "Nein" ) == "Ja" else False
         self.chkSHP.setChecked(bGenSHP)
         self.chkSHP_clicked()
         
         iCodePage=s.value( "iCodePage", 0 ) 
+        self.txtFaktor.setText('1.3')
 
-        self.txtHoe.setText(s.value( "dblHoe", '2' ))
-        
-        self.cbUnit.addItem(self.tr("Map unit"))
-        self.cbUnit.addItem(self.tr("Millimeter"))
+
         self.cbCharSet.addItems(self.charsetList)
-        iUnit=s.value( "iUnit", 0 )
-        self.cbUnit.setCurrentIndex(int(iUnit)) # unter Linux war/ist Int() notwendig
         self.cbCharSet.setCurrentIndex(int(iCodePage))
         try:
             self.lbGDAL.setText(gdal.VersionInfo("GDAL_RELEASE_DATE"))
@@ -347,11 +350,11 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         s.setValue( "bGenCol", "Ja" if self.chkCol.isChecked() == True else "Nein")
         s.setValue( "bGenLay", "Ja" if self.chkLay.isChecked() == True else "Nein")
         s.setValue( "bGenSHP", "Ja" if self.chkSHP.isChecked() == True else "Nein")
-        s.setValue( "bFormatText", "Ja" if self.chkHideFormat.isChecked() == True else "Nein")
+        s.setValue( "bFormatText", "Ja" if self.chkUseTextFormat.isChecked() == True else "Nein")
+        s.setValue( "bUseColor4Point", "Ja" if self.chkUseColor4Point.isChecked() == True else "Nein")
+        s.setValue( "bUseColor4Line", "Ja" if self.chkUseColor4Line.isChecked() == True else "Nein")
+        s.setValue( "bUseColor4Poly", "Ja" if self.chkUseColor4Poly.isChecked() == True else "Nein")
         
-        
-        s.setValue( "dblHoe", str(self.txtHoe.text()))
-        s.setValue( "iUnit", self.cbUnit.currentIndex())
         s.setValue( "iCodePage", self.cbCharSet.currentIndex())
         
     
@@ -385,16 +388,16 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
             QMessageBox.critical(None, self.tr("Destination path not found"), ZielPfad)
             return
              
-        # 3. Text ob Texthöhe i.o               
+        #3. Test ob Faktor logisch            
         try:
-            dblHoe=float(self.txtHoe.text().replace(",","."))
-            if dblHoe == 0:
-                QMessageBox.critical(None, self.tr("Reset text height"), self.tr("Text height can not assume a zero value") )
-                self.txtHoe.setText("2")
+            dblFaktor=float(self.txtFaktor.text().replace(",","."))
+            if dblFaktor == 0:
+                QMessageBox.critical(None, self.tr("Reset text height"), self.tr("Text correction factor can not assume a zero value") )
+                self.txtFaktor.setText("1.3")
                 return
         except:
-            QMessageBox.critical(None , self.tr("Reset text height"), self.tr("Error converting text to numbers"))
-            self.txtHoe.setText("2")
+            QMessageBox.critical(None , self.tr("Reset text height"), self.tr("Error converting Text correction factor to numbers"))
+            self.txtFaktor.setText("1.3")
             return
             
         self.OptSpeichern()
@@ -405,8 +408,10 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         #printlog (self.txtDXFDatNam.text())
         #return
     
-        Antw = DXFImporter (self, self.listDXFDatNam, ZielPfad, self.chkSHP.isChecked(), self.cbCharSet.currentText(), dblHoe, self.cbUnit.currentIndex() == 0, self.chkCol.isChecked(),self.chkLay.isChecked(), self.chkHideFormat.isChecked())
+        Antw = DXFImporter (self, self.listDXFDatNam, ZielPfad, self.chkSHP.isChecked(), self.cbCharSet.currentText(),self.chkCol.isChecked(),self.chkLay.isChecked(), self.chkUseTextFormat.isChecked(), self.chkUseColor4Point.isChecked(), self.chkUseColor4Line.isChecked(), self.chkUseColor4Poly.isChecked(), dblFaktor)
         self.FormRunning(False) # nur sicherheitshalber, falls in DXFImporter übersprungen/vergessen
+        
+    
         
     def SetAktionText(self,txt):
         self.lbAktion.setText(txt)
@@ -438,25 +443,17 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
                 ctl.hide()
             else:
                 ctl.show()
-        Anz(self.lbFormat)
-        Anz(self.chkHideFormat)
-        Anz(self.lbGDAL) 
+        Anz(self.lbFormat); Anz(self.lbColor); Anz(self.lbGDAL); Anz(self.lbDXF); Anz(self.lbSHP); Anz(self.lblCharSet)
+        Anz(self.chkUseTextFormat);Anz(self.chkUseColor4Point); Anz(self.chkUseColor4Line); Anz(self.chkUseColor4Poly)
+ 
         Anz(self.btnStart) 
-        Anz(self.txtHoe)
-        Anz(self.cbUnit)
         Anz(self.cbCharSet)
         Anz(self.button_box.button(QDialogButtonBox.Close))
-        Anz(self.browseDXFDatei)
-        Anz(self.browseZielPfad)
-        Anz(self.listDXFDatNam)
-        Anz(self.txtZielPfad)
-        Anz(self.chkCol)
-        Anz(self.chkLay)
-        Anz(self.chkSHP)
-        Anz(self.lbDXF)
-        Anz(self.lbSHP)
-        Anz(self.lbFont)
-        Anz(self.lblCharSet)
+        Anz(self.browseDXFDatei);Anz(self.browseZielPfad)
+        Anz(self.listDXFDatNam);Anz(self.txtZielPfad)
+        Anz(self.chkCol); Anz(self.chkLay); Anz(self.chkSHP)
+        Anz(self.lbFaktor);Anz(self.txtFaktor)
+        
 
 
         if bRun:

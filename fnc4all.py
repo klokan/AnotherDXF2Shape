@@ -2,13 +2,12 @@
 """
 /***************************************************************************
  fnc4all
-                                 A QGIS plugin
- CAIGOS-PostgreSQL/PostGIS in QGIS darstellen
-                              -------------------
-        begin                : 2016-04-18
+ KonverDXF to shape and add to QGIS
+                             -------------------
+        begin                : 2016-06-20
         git sha              : $Format:%H$
-        copyright            : (C) 2016 by EZUSoft
-        email                : qgis (at) makobo.de
+        copyright            : (C) 2016 by Mike Blechschmidt EZUSoft 
+        email                : qgis@makobo.de
  ***************************************************************************/
 
 /***************************************************************************
@@ -46,7 +45,8 @@ def addFehler (Fehler):
     if type(Fehler) == str:
         su=Fehler.decode("utf8")
     else:
-        su=Fehler
+        # 14.12.16 explizit in String, da tr() type QString liefert
+        su=str(Fehler)
     glFehlerListe.append (su)
 def getFehler() :
     return glFehlerListe
@@ -71,16 +71,20 @@ def resetHinweis() :
 except Exception as e:
     exc_type, exc_obj, exc_tb = sys.exc_info()
     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    subLZF ("Irgendwas",exc_type, fname, exc_tb.tb_lineno)
+    subLZF ("Irgendwas")
 """
-def subLZF(exc_type, fname, tb_lineno, Sonstiges = None):
+def subLZF(Sonstiges = None):
     #http://stackoverflow.com/questions/1278705/python-when-i-catch-an-exception-how-do-i-get-the-type-file-and-line-number
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+    tb_lineno=exc_tb.tb_lineno
     try:
-        QgsMessageLog.logMessage( traceback.format_exc().replace("\n",chr(9))+ (chr(9) + Sonstiges) if Sonstiges else "", u'CaigosConnector:Fehler' )
+        QgsMessageLog.logMessage( traceback.format_exc().replace("\n",chr(9))+ (chr(9) + Sonstiges if Sonstiges else ""), u'EZUSoft:Error' )
     except:
         pass
-    QMessageBox.critical( None,"PlugIn Laufzeitfehler" ,str(exc_type) + ": \nDatei: " + fname + "\nZeile: "+ str(tb_lineno) + ("\n" + Sonstiges) if Sonstiges else "")
-    addFehler ("LZF:" + traceback.format_exc().replace("\n",chr(9)) + (chr(9) + Sonstiges) if Sonstiges else "")
+    if fncDebugMode():
+        QMessageBox.critical( None,"PlugIn Laufzeitfehler" ,str(exc_type) + ": \nDatei: " + fname + "\nZeile: "+ str(tb_lineno) + ("\n" + Sonstiges if Sonstiges else ""))
+    addFehler ("LZF:" + traceback.format_exc().replace("\n",chr(9)) + (chr(9) + Sonstiges if Sonstiges else ""))    
     
 def errbox (text,p=None):
     su=text
@@ -88,7 +92,7 @@ def errbox (text,p=None):
         su=text.decode("utf8")    
     QMessageBox.critical(None, "PlugIn Fehler", su)
     try:
-        QgsMessageLog.logMessage( su, u'CaigosConnector:Fehler' )
+        QgsMessageLog.logMessage( su, u'EZUSoft:Fehler' )
     except:
         pass
 
@@ -99,7 +103,7 @@ def msgbox (text):
         su=text.decode("utf8")    
     QMessageBox.information(None, "PlugIn Hinweis", su)
     try:
-        QgsMessageLog.logMessage( su, u'CaigosConnector:Hinweise' )
+        QgsMessageLog.logMessage( su, u'EZUSoft:Hinweise' )
     except:
         pass
 
@@ -111,7 +115,7 @@ def errlog(text,p=None):
         QMessageBox.information(None, "DEBUG:", su)
     
     try:
-        QgsMessageLog.logMessage( su, u'CaigosConnector:Fehler' )
+        QgsMessageLog.logMessage( su, u'EZUSoft:Fehler' )
     except:
         pass
 
@@ -159,7 +163,7 @@ def debuglog(text,p=None):
         if type(text) == str:
             su=text.decode("utf8")   
         try:
-            QgsMessageLog.logMessage( su, 'AXF2Shape:Debug' )
+            QgsMessageLog.logMessage( su, 'EZUSoft:Debug' )
         except:
             pass
 
@@ -235,7 +239,12 @@ def toUTF8(uText):
     
 
 if __name__ == "__main__":
-    print (ifAscii('äjfj'))
+    print ("Immer" + ("Zusatz" if True else ""))
+    dblFaktor=1.3
+    s= "1.3"
+    sf = str(dblFaktor)
+    sf = u"1~~1~~" + sf + " * \"size\"~~"
+    print type(s), type(sf) , s == sf
     """
     print EZUTempDir()
     print EZUTempClear(True)

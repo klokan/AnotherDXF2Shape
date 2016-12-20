@@ -2,6 +2,12 @@
 """
 /***************************************************************************
  clsDXFTools
+    Änderungen V0.5:
+        20.12.16 
+            - Layer auf transparent 50%
+        16.12.16
+            - Übernahme Farben aus DXF
+
     Änderungen V0.4.1:
         25.11.16:
             - Fehlerkorrektur
@@ -58,6 +64,7 @@ from PyQt4 import QtGui, uic
 from PyQt4.QtSql import QSqlDatabase, QSqlQuery, QSqlError
 from glob import glob
 from shutil import copyfile, move
+from clsDBase import DBFedit
 
 def tr( message):
     """Get the translation for a string using Qt translation API.
@@ -73,55 +80,69 @@ def tr( message):
     # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
     return QCoreApplication.translate('clsDXFTools', message)
 
-def labelingDXF (qLayer,fontSize,fontSizeInMapUnits, FormatText):
+"""
+def joinDXFLabel(dxfLayer,csvLayer):
+    dxfField='EntityHand'
+    csvField='Handle'
+    joinObject = QgsVectorJoinInfo()
+    joinObject.joinLayerId = csvLayer.id()
+    joinObject.joinFieldName = csvField
+    joinObject.targetFieldName = dxfField
+    dxfLayer.addJoin(joinObject)
+    
+def addCSVLayer(csvDatNam):
+    uri = csvDatNam + '?type=csv&delimiter=%5Ct&spatialIndex=no&subsetIndex=no&watchFile=no'
+    return QgsVectorLayer(uri, str(uuid.uuid4()), 'delimitedtext')
+"""
+
+def labelingDXF (qLayer, bFormatText, bUseColor4Point, dblFaktor):       
     # Textdarstellung über Punktlabel
     QgsPalLayerSettings().writeToLayer( qLayer )
     qLayer.setCustomProperty("labeling","pal")
-    qLayer.setCustomProperty("labeling/dataDefined/Rotation","alpha")
     qLayer.setCustomProperty("labeling/displayAll","true")
     qLayer.setCustomProperty("labeling/enabled","true")
     
     
-    if FormatText:
-        rStr="regexp_replace(Case When substr(\"Text\",1,1) = '{'  Then substr(Text,strpos(\"Text\",';')+1,length(\"Text\")-strpos(\"Text\",';')-1) When substr(\"Text\",1,1) = '\\\\'  Then substr(Text,strpos(\"Text\",';')+1,length(\"Text\")-strpos(\"Text\",';')) Else \"Text\" End, '%%.|\\\\\\\\.','')"
-        uStr="case when strpos(\"Text\",'\\\\\\\\L') or strpos(\"Text\",'%%u') then True  else False  end"
-        uStr="1~~1~~" + uStr + "~~"
-        qLayer.setCustomProperty("labeling/isExpression","True") # wichtig, sonnst wird nix angezeigt
-        qLayer.setCustomProperty("labeling/fieldName",rStr)
-        qLayer.setCustomProperty("labeling/dataDefined/Underline",uStr)
-
+    if bFormatText:
+        # Einstellungen aus Textformatcode
+        qLayer.setCustomProperty("labeling/fieldName","plaintext")
+        qLayer.setCustomProperty("labeling/dataDefined/Underline","1~~1~~\"underline\"~~")
+        qLayer.setCustomProperty("labeling/dataDefined/Bold","1~~1~~\"bold\"~~")  
+        qLayer.setCustomProperty("labeling/dataDefined/Italic","1~~1~~\"italic\"~~")          
+ 
     else:
         qLayer.setCustomProperty("labeling/fieldName","Text")
+    
+    if bUseColor4Point:
+        qLayer.setCustomProperty("labeling/dataDefined/Color","1~~1~~\"color\"~~") 
         
-    #qLayer.setCustomProperty("labeling/fieldName","replace(\"Text\",'%%u','')")
-    #qLayer.setCustomProperty("labeling/fontBold","True" if rsAtt.value(7) == "J" else "False") 
-    #qLayer.setCustomProperty("labeling/fontFamily",rsAtt.value(6)) 
-    #qLayer.setCustomProperty("labeling/fontItalic","True" if rsAtt.value(8) == "J" else "False")
-    #qLayer.setCustomProperty("labeling/fontUnderline","True" if rsAtt.value(9) == "J" else "False")
-    qLayer.setCustomProperty("labeling/fontSize",fontSize) 
-    qLayer.setCustomProperty("labeling/fontSizeInMapUnits",fontSizeInMapUnits)
+    # Einstellungen aus DXF bzw. aus Textformatcode
+    # !!! str(dblFaktor) funktioniert in 2.18 nicht da type 'future.types.newstr.newstr'
+    sf = "%.1f" % dblFaktor
+    sf = "1~~1~~" + sf + " * \"size\"~~"
+    qLayer.setCustomProperty("labeling/dataDefined/Size",sf) 
+
+    qLayer.setCustomProperty("labeling/dataDefined/Family","1~~1~~\"font\"~~")   
+    qLayer.setCustomProperty("labeling/fontSizeInMapUnits","True")        
+    qLayer.setCustomProperty("labeling/dataDefined/Rotation","1~~1~~\"angle\"~~")
+    qLayer.setCustomProperty("labeling/dataDefined/OffsetQuad", "1~~1~~\"anchor\"~~")
+    
+      
+
+    # allgemeine Standardeinstellungen    
     qLayer.setCustomProperty("labeling/obstacle","false")
     qLayer.setCustomProperty("labeling/placement","1")
     qLayer.setCustomProperty("labeling/placementFlags","0")
-    #qLayer.setCustomProperty("labeling/quadOffset", fnctxtCtoQ(rsAtt.value(11))) 
-    qLayer.setCustomProperty("labeling/textColorA","255")
-    
-    #color = fncLongToRGB(rsAtt.value(4)) #4
-    #qLayer.setCustomProperty("labeling/textColorR",color[0])
-    #qLayer.setCustomProperty("labeling/textColorG",color[1])
-    #qLayer.setCustomProperty("labeling/textColorB",color[2])
 
     qLayer.setCustomProperty("labeling/textTransp","0")
     qLayer.setCustomProperty("labeling/upsidedownLabels","2")
-    qLayer.setCustomProperty("labeling/wrapChar",r"\n")
-    #qLayer.setCustomProperty("labeling/dataDefined/Underline","1~~1~~case\nwhen strpos(\"Text\",'%%u') then 0\nelse 1\nend~~")    
-    
 
-def kat4Layer(layer):
+
+def kat4Layer(layer, bUseColor4Line,bUseColor4Poly):
     # get unique values 
     fni = layer.fieldNameIndex('Layer')
     unique_values = layer.dataProvider().uniqueValues(fni)
-
+    symbol_layer = None
     # define categories
     categories = []
     for AktLayerNam in unique_values:
@@ -132,15 +153,37 @@ def kat4Layer(layer):
 
         # configure a symbol layer
         layer_style = {}
-        layer_style['color'] = '%d, %d, %d' % (randrange(0,256), randrange(0,256), randrange(0,256))
-        layer_style['outline'] = '#000000'
-        symbol_layer = QgsSimpleFillSymbolLayerV2.create(layer_style)
+        if layer.geometryType() == 1 and bUseColor4Line:
+            layer_style["color_dd_active"]="1"
+            layer_style["color_dd_expression"]="\"color\""
+            layer_style["color_dd_field"]="color"
+            layer_style["color_dd_useexpr"]="0"
+            symbol_layer = QgsSimpleLineSymbolLayerV2.create(layer_style)
+        if layer.geometryType() == 2 and bUseColor4Poly:
+            layer_style["color_dd_active"]="1"
+            layer_style["color_dd_expression"]="\"fcolor\""
+            layer_style["color_dd_field"]="fcolor"
+            layer_style["color_dd_useexpr"]="0"
+            layer_style['outline'] = '1, 234, 3'
+            symbol_layer = QgsSimpleFillSymbolLayerV2.create(layer_style)
+
+        layer.setLayerTransparency(50)
+
+		#else:
+        #    layer_style['color'] = '%d, %d, %d' % (randrange(0,256), randrange(0,256), randrange(0,256))
+        #layer_style['color'] = '1, 2, 234'
+        #layer_style['line_width'] = '12.3'
+        #print "hier"
+        
+
 
         # replace default symbol layer with the configured one
         if symbol_layer is not None:
             symbol.changeSymbolLayer(0, symbol_layer)
-            if layer.geometryType() == 0:
-               symbol.setSize( 0.1 )
+        
+        # Textlayer
+        if layer.geometryType() == 0:
+           symbol.setSize( 0.1 )
 
         # create renderer object
         category = QgsRendererCategoryV2(AktLayerNam, symbol, AktLayerNam)
@@ -222,7 +265,7 @@ def ProjDaten4Dat(AktDXFDatNam, bCol, bLayer, bSHPSave):
     
     return AktList,AktOpt,ProjektName, Kern
 
-def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet, fontSize, fontSizeInMapUnits, bCol,bLayer, bFormatText):    
+def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet,  bCol,bLayer, bFormatText, bUseColor4Point, bUseColor4Line, bUseColor4Poly, dblFaktor ):    
     # -----------------------------------------------------------------------------------------------    
     # 1. Löschen der alten Projekte und evtl. Ermittlung der zu überschreibenden Dateien
     delShp=[]
@@ -252,7 +295,7 @@ def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet, fontSize, fon
     # -----------------------------------------------------------------------------------------------    
     # 2. Dialog zur CRS-Eingabe aufrufen und Dummylayer schreiben, um eine qprj zu erhalten
     # Vorteil der qprj: auch UserCRS werden erkannt
-    mLay=QgsVectorLayer('LineString', 'EPSG Code eingeben' , 'memory')
+    mLay=QgsVectorLayer('LineString','' , 'memory')
     memDat=EZUTempDir() + str(uuid.uuid4()) + '.shp'
     Antw=QgsVectorFileWriter.writeAsVectorFormat(mLay,memDat,  None, mLay.crs(), "ESRI Shapefile")
     qPrjDatName=memDat[0:-3] + 'qpj'
@@ -265,10 +308,7 @@ def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet, fontSize, fon
     # die beiden nachfolgenden Zeilen haben bei einem Test das Problem gefixt - konnte aber noch nicht wiederholt werden
     # recht zeitaufwändig
     uiParent.FormRunning(True)
-    
-    
-    uiParent.SetDatAktionGesSchritte(8)
-    
+    uiParent.SetDatAktionGesSchritte(8)    
     uiParent.SetAktionText("")
     uiParent.SetDatAktionText(tr("process init - please wait"))
     uiParent.SetDatAktionAktSchritt(1)
@@ -295,11 +335,18 @@ def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet, fontSize, fon
         iface.legendInterface().setGroupExpanded( grpProjekt, True )  
        
         #msgbox ("Bearbeite '" + AktDXFDatNam + "'")
-        Antw = EineDXF (uiParent,grpProjekt,AktList, Kern, AktOpt, AktDXFDatNam,shpPfad, qPrjDatName,  sCharSet, fontSize, fontSizeInMapUnits, bLayer, bFormatText)
+        Antw = EineDXF (uiParent,grpProjekt,AktList, Kern, AktOpt, AktDXFDatNam,shpPfad, qPrjDatName, sCharSet, bLayer, bFormatText, bUseColor4Point,bUseColor4Line,bUseColor4Poly, dblFaktor)
 
+    if len(getFehler()) > 0:
+        errbox("\n\n".join(getFehler()))
+        resetFehler()
+    if len(getHinweis()) > 0:
+        hinweislog("\n\n".join(getHinweis()))
+        resetHinweis()        
+    
     uiParent.FormRunning(False)
         
-def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam,shpPfad, qPrjDatName,  sCharSet, fontSize, fontSizeInMapUnits, bLayer, bFormatText):
+def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjDatName, sCharSet, bLayer, bFormatText, bUseColor4Point,bUseColor4Line,bUseColor4Poly, dblFaktor):
     """
     mLay=QgsVectorLayer('LineString', 'EPSG Code eingeben' , 'memory')
     memDat=EZUTempDir() + str(uuid.uuid4()) + '.shp'
@@ -328,7 +375,9 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam,shpPfad, qPrjDa
         korrDXFDatNam=(EZUTempDir() + str(uuid.uuid4()) + '.dxf')
         copyfile(DXFDatNam, korrDXFDatNam)
         printlog ("Copy" + DXFDatNam + ' --> ' + korrDXFDatNam)
+    
 
+    
     zE=0
     uiParent.SetAktionGesSchritte(len(AktList))
     for p in AktList:
@@ -337,7 +386,8 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam,shpPfad, qPrjDa
         uiParent.SetAktionText(tr("Edit Entity: " + Kern+v[0] ))
         uiParent.SetAktionAktSchritt(zE)
         shpdat=shpPfad+Kern+v[0]+'.shp'
-        opt=  ('-skipfailure %s -nlt %s -where "OGR_GEOMETRY %s"') % (AktOpt,v[1],v[2])
+        opt=  ('-skipfailure %s -nlt %s -sql "select *, ogr_style from entities where OGR_GEOMETRY %s"') % (AktOpt,v[1],v[2])
+        #opt=  ('-skipfailure %s -nlt %s -where "OGR_GEOMETRY %s"') % (AktOpt,v[1],v[2])
         
         # ----------------------------------------------------------------------------
         # Dateiziel anpassen
@@ -353,7 +403,8 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam,shpPfad, qPrjDa
         if processing.runalg('gdalogr:convertformat',korrDXFDatNam +'|layername=entities', 0, opt , korrSHPDatNam) is None:
             addFehler(tr("process 'gdalogr:convertformat' could not start please restart QGIS"))
         else:
-            if os.path.exists(korrSHPDatNam):      
+            if os.path.exists(korrSHPDatNam):
+                DBFedit(korrSHPDatNam,bFormatText)
                 if korrSHPDatNam <> shpdat:
                     # evtl. korrigierte Dateiname umbenennen
                     printlog ("move:" + korrSHPDatNam + '-->' + shpdat)
@@ -389,14 +440,13 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam,shpPfad, qPrjDa
                         if not bLayer:
                             QgsMapLayerRegistry.instance().addMapLayer(Layer)
                             iface.legendInterface().moveLayer( Layer, grpProjekt)
-                            Rend=kat4Layer(Layer)
+                            Rend=kat4Layer(Layer, bUseColor4Line, bUseColor4Poly)
                             if Rend is not None:
                                 Layer.setRendererV2(Rend)
                             else:
                                 addFehler ("Categorization for  " + opt + " could not be executed")
                             if Layer.geometryType() == 0:
-                                labelingDXF (Layer,fontSize,fontSizeInMapUnits, bFormatText)
-                                
+                                labelingDXF (Layer,bFormatText, bUseColor4Point, dblFaktor)                               
                             
                         else:
                             fni = Layer.fieldNameIndex('Layer')
@@ -415,6 +465,7 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam,shpPfad, qPrjDa
                                 Layer.setProviderEncoding(sCharSet)
                                 Layer.dataProvider().setEncoding(sCharSet)   
                                 Layer.setSubsetString( "Layer = '" + AktLayerNam + "'" )
+
                                 QgsMapLayerRegistry.instance().addMapLayer(Layer)
                                 #print 'Layer = "' + AktLayerNam + '"'
                                 #iface.mapCanvas().setRenderFlag( True )
@@ -427,12 +478,47 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam,shpPfad, qPrjDa
                                     iface.legendInterface().moveLayer( Layer, gL)
                                 else:
                                     iface.legendInterface().moveLayer( Layer, myGroups[AktLayerNam])
-                                
+                                    
                                 if Layer.geometryType() == 0:
                                     symbol = QgsSymbolV2.defaultSymbol(Layer.geometryType())
                                     symbol.setSize( 0.1 )
                                     Layer.setRendererV2(QgsSingleSymbolRendererV2( symbol ) )                   
-                                    labelingDXF (Layer,fontSize,fontSizeInMapUnits, bFormatText)
+                                    labelingDXF (Layer, bFormatText, bUseColor4Point, dblFaktor)
+                                if Layer.geometryType() == 1 and bUseColor4Line:
+                                    lineMeta = QgsSymbolLayerV2Registry.instance().symbolLayerMetadata("SimpleLine")
+                                    symbol = QgsSymbolV2.defaultSymbol(Layer.geometryType())
+                                    renderer = QgsRuleBasedRendererV2(symbol)
+                                    root_rule = renderer.rootRule()
+                                    rule = root_rule.children()[0].clone()
+                                    symbol.deleteSymbolLayer(0)
+                                    qmap={}
+                                    qmap["color_dd_active"]="1"
+                                    qmap["color_dd_expression"]="\"color\""
+                                    qmap["color_dd_field"]="color"
+                                    qmap["color_dd_useexpr"]="0"
+                                    lineLayer = lineMeta.createSymbolLayer(qmap)
+                                    symbol.appendSymbolLayer(lineLayer)
+                                    rule.setSymbol(symbol)
+                                    rule.appendChild(rule) 
+                                    Layer.setRendererV2(renderer) 
+                                if Layer.geometryType() == 2 and bUseColor4Poly:
+                                    fillMeta = QgsSymbolLayerV2Registry.instance().symbolLayerMetadata("SimpleFill")
+                                    symbol = QgsSymbolV2.defaultSymbol(Layer.geometryType())
+                                    renderer = QgsRuleBasedRendererV2(symbol)
+                                    root_rule = renderer.rootRule()
+                                    rule = root_rule.children()[0].clone()
+                                    symbol.deleteSymbolLayer(0)
+                                    qmap={}
+                                    qmap["color_dd_active"]="1"
+                                    qmap["color_dd_expression"]="\"fccolor\""
+                                    qmap["color_dd_field"]="fcolor"
+                                    qmap["color_dd_useexpr"]="0"
+                                    lineLayer = fillMeta.createSymbolLayer(qmap)
+                                    symbol.appendSymbolLayer(lineLayer)
+                                    rule.setSymbol(symbol)
+                                    rule.appendChild(rule) 
+                                    Layer.setRendererV2(renderer)                                         
+                                    Layer.setLayerTransparency(50)
                     else:
                         Layer=None # um Datei löschen zu ermöglichen
                         if not DelShapeDatBlock(shpdat):
@@ -442,10 +528,7 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam,shpPfad, qPrjDa
             else:  
                 addFehler(tr("Creation '" + shpdat + "' failed. Please look to the QGIS log message panel (OGR)"))
 
-    if len(getFehler()) > 0:
-        errbox("\n\n".join(getFehler()))
-    if len(getHinweis()) > 0:
-        hinweislog("\n\n".join(getHinweis())) 
+
     uiParent.SetAktionGesSchritte(2)
     uiParent.SetAktionText("Darstellung einschalten" )
     uiParent.SetAktionAktSchritt(1)
