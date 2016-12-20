@@ -6,10 +6,13 @@ Features:
       
       - More elements than the standard import are displayed 
       - Display of text (Labeling)
+        Text parameters (attributes) are convert from the DXF
+        E.g. Rotation angle, text size, text color, position (text-align), color
+        transfer of individual text formats
       - Categorization by Layer
       - Group by Layer
       - multiple files can be imported at the same time (batch import) 
-      - MTEXT formatting code will hided and underlined lines are converted
+      - optional: convert color from DXF
       
 
 Usage:
