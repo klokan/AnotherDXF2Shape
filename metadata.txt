@@ -10,8 +10,11 @@
 name=Another DXF Importer / DXF2Shape Converter
 qgisMinimumVersion=2.8
 description=Add DXF to QGIS and convert DXF to Shape
-version=0.5
-changelog=20.12.16 V0.5
+version=0.6
+changelog=17.02.17 V0.6
+        - Adjustment for high resolution screens
+
+        20.12.16 V0.5
         - Text parameters (attributes) are convert from the DXF
            E.g. Rotation angle, text size, text color, position (text-align), color
         - transfer of individual text formats

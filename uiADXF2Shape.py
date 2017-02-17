@@ -2,6 +2,13 @@
 """
 /***************************************************************************
  uiADXF2Shape
+    Änderungen V0.6:
+        17.02.17
+            - keine Anpassung der Fenstergröße in Abhängigkeit der Dateianzahl,
+              da das auf UHD7$K ohnehin nicht passt
+            - speichern der letzten Dialoggröße und Wiederherstellung bei Neustart
+            - Einbau Resetknopf für Standardvoreinstellungen
+            
     Änderungen V0.4:
         23.11.16:
             - Stapelimport integriert
@@ -201,6 +208,7 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         self.browseZielPfad.clicked.connect(self.browseZielPfad_clicked) 
         self.chkSHP.clicked.connect(self.chkSHP_clicked)    
         self.btnStart.clicked.connect(self.btnStart_clicked)          
+        self.btnReset.clicked.connect(self.btnReset_clicked)  
         
         # Per Code alle Elemente beschriften die ein  "\n" enthalten, denn  das kann der Form-Tranlator nicht
         #self.chkCol.setText (self.tr(u"Geometriecollektion \n(Blöcke/Signaturen)\nseparat ausspielen"))
@@ -212,9 +220,41 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         #self.txtDXFDatNam.setPlaceholderText(self.tr(u"DXF-Datei eingeben")) 
         #self.lbDXF.setText(self.tr(u"DXF-Quelldatei"))
         
+        self.StartHeight = self.height()
+        self.StartWidth  = self.width()
+        
+        self.SetzeVoreinstellungen()
+        listEmpty = self.tr("no DXF-file selected")
+        self.listDXFDatNam.addItem (listEmpty)
+        self.listDXFDatNam.setEnabled(False)  
+        self.listEmpty=listEmpty
+        self.FormRunning(False)
+    # noinspection PyMethodMayBeStatic
+    
+    def tr(self, message):
+        """Get the translation for a string using Qt translation API.
 
-        # Letzte Werte lesen
+        We implement this ourselves since we do not inherit QObject.
+
+        :param message: String for translation.
+        :type message: str, QString
+
+        :returns: Translated version of message.
+        :rtype: QString
+        """
+        # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
+        return QCoreApplication.translate('uiADXF2Shape', message)
+    
+    def SetzeVoreinstellungen(self):
+	    # Voreinstellungen setzen
         s = QSettings( "EZUSoft", "ADXF2Shape" )
+        
+        # letzte Anzeigegröße wiederherstellen
+        SaveWidth  = int(s.value("SaveWidth", "0"))
+        SaveHeight = int(s.value("SaveHeight", "0"))
+        if SaveWidth > self.minimumWidth() and SaveHeight > self.minimumHeight():
+            self.resize(SaveWidth,SaveHeight)
+        
         
         bGenCol = True if s.value( "bGenCol", "Nein" ) == "Ja" else False
         self.chkCol.setChecked(bGenCol)
@@ -246,8 +286,10 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
             self.lbGDAL.setText(gdal.VersionInfo("GDAL_RELEASE_DATE"))
         except:
             self.lbGDAL.setText("-")
-        self.StartHeight=self.height()
-        self.StartMinHeight=self.minimumHeight()
+			
+		# 17.02.17: Keine Anpassung mehr, da bei UHD/4K ohnehin  alles anders läuft
+        # self.StartHeight=self.height()
+        # self.StartMinHeight=self.minimumHeight()
         # Drag & Drop Event
         #if not fncDebugMode():
             # Kommt bei Programmfehleren immer wieder zu komischen Effekten/Abstüzen - deshalb wärend der Entwicklung deaktivieren
@@ -255,28 +297,7 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
             #               und der Anpassungsaufwand im Moment nicht lohnt
             #self.listDXFDatNam.installEventFilter(QLineEditDropHandler(self))
             #self.txtZielPfad.installEventFilter(QLineEditDropHandler(self))
-            
-        listEmpty = self.tr("no DXF-file selected")
-        self.listDXFDatNam.addItem (listEmpty)
-        self.listDXFDatNam.setEnabled(False)  
-        self.listEmpty=listEmpty
-        self.FormRunning(False)
-    # noinspection PyMethodMayBeStatic
-    
-    def tr(self, message):
-        """Get the translation for a string using Qt translation API.
 
-        We implement this ourselves since we do not inherit QObject.
-
-        :param message: String for translation.
-        :type message: str, QString
-
-        :returns: Translated version of message.
-        :rtype: QString
-        """
-        # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
-        return QCoreApplication.translate('uiADXF2Shape', message)
-        
     def chkSHP_clicked(self):
         bGenSHP=self.chkSHP.isChecked()
         self.lbSHP.setEnabled(bGenSHP)      
@@ -318,7 +339,9 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
             self.listDXFDatNam.addItem(DXFDatName) 
             MerkAnz=Anz
         
-        if MerkAnz > 1:
+    """
+		# 17.02.17: Keine Anpassung mehr, da bei UHD/4K ohnehin  alles anders läuft
+		if MerkAnz > 1:
             #self.listDXFDatNam.setMaximumHeight(1000)
             self.listDXFDatNam.setMinimumHeight(40)
             self.setMinimumHeight = self.StartMinHeight+150
@@ -328,7 +351,7 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
             self.listDXFDatNam.setMinimumHeight(20)
             self.setMinimumHeight = self.StartMinHeight
             #self.resize(self.width(),self.StartHeight)
-        
+    """    
 
     def browseZielPfad_clicked(self):
         s = QSettings( "EZUSoft", "ASHP2Shape" )
@@ -357,6 +380,17 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         
         s.setValue( "iCodePage", self.cbCharSet.currentIndex())
         
+        # nachfolgendes wird grundsätzlich immer gespeichert (nach RunMenue)
+        #s.setValue("SaveWidth", self.width)
+        #s.setValue("SaveHeight", self.height)
+        
+    
+    def btnReset_clicked(self):
+        result = QMessageBox.question(None,'Another DXF2Shape' , self.tr('Restore default settings'), QMessageBox.Yes | QMessageBox.No, QMessageBox.No)        
+        if result == QMessageBox.Yes:
+            QSettings( "EZUSoft", "ADXF2Shape" ).clear()
+            self.resize(self.StartWidth,self.StartHeight)
+            self.SetzeVoreinstellungen()
     
     def btnStart_clicked(self):
         # 0. Test ob eine DXF gewählt
@@ -447,6 +481,7 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         Anz(self.chkUseTextFormat);Anz(self.chkUseColor4Point); Anz(self.chkUseColor4Line); Anz(self.chkUseColor4Poly)
  
         Anz(self.btnStart) 
+        Anz(self.btnReset)
         Anz(self.cbCharSet)
         Anz(self.button_box.button(QDialogButtonBox.Close))
         Anz(self.browseDXFDatei);Anz(self.browseZielPfad)
@@ -477,5 +512,9 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
 
     def RunMenu(self):
         self.exec_()
+        s = QSettings( "EZUSoft", "ADXF2Shape" )
+        s.setValue("SaveWidth", str(self.width()))
+        s.setValue("SaveHeight", str(self.height()))
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
+

@@ -530,7 +530,7 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
 
 
     uiParent.SetAktionGesSchritte(2)
-    uiParent.SetAktionText("Darstellung einschalten" )
+    uiParent.SetAktionText(tr("Switch on the display") )
     uiParent.SetAktionAktSchritt(1)
     iface.mapCanvas().setRenderFlag( True )
     

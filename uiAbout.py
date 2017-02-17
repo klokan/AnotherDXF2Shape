@@ -59,8 +59,8 @@ class uiAbout(QtGui.QDialog, FORM_CLASS):
   
 if __name__ == "__main__":
     # zur zum lokalen testen
-    print  os.path.dirname(__file__)
+    dummy=0
+    #s = QSettings( "EZUSoft", "ADXF2Shape" )
+    #print str(s.value("SaveWidth", "0"))
+    #print int(s.value("SaveWidth", "0"))
 
-    app = QtGui.QApplication(sys.argv)    
-    cls=uiAbout()
-    cls.exec_()
