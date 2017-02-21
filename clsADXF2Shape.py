@@ -188,7 +188,7 @@ class clsADXF2Shape:
             self.iface.removePluginVectorMenu(
                 self.tr('&DXF Import/Convert'),
                 action)
-
+        
 
     def About(self): 
         # About-Fenster wird modal geöffnet

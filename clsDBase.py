@@ -2,7 +2,9 @@
 """
 /***************************************************************************
  clsDBase
-    Änderungen V0.5:
+    Änderungen V0.7:
+        21.02.17 
+            - Kodierungsprobleme beseitigt
         13.12.16
             - Ersterstellung
             
@@ -28,6 +30,7 @@
 from osgeo import ogr
 from PyQt4.QtCore import  QCoreApplication
 from fnc4all import *
+import locale
 
 def tr( message):
     """Get the translation for a string using Qt translation API.
@@ -217,7 +220,10 @@ def splitText (fText,TxtType):
  
 #print splitText(r'%%u1144',"TEXT")    
 
-def DBFedit (shpdat,bFormat):
+def DBFedit (shpdat,bFormat,sCharSet):
+    if sCharSet == "System":
+        sCharSet=locale.getdefaultlocale()[1]
+
     source = ogr.Open(shpdat, update=True)
     if source is None:
         addFehler(tr('ogr: can not open: ') + shpdat)
@@ -229,9 +235,9 @@ def DBFedit (shpdat,bFormat):
     for i in range(laydef.GetFieldCount()):
         if laydef.GetFieldDefn(i).GetName() == 'ogr_style':
             Found = True
-            #print 'ogr_style in:' + shpdat
+
     if not Found:
-        addFehler(tr('missing ogr_style: ') + shpdat)
+        addFehler(tr("missing field 'ogr_style': ") + shpdat)
         return
     
 
@@ -256,7 +262,7 @@ def DBFedit (shpdat,bFormat):
             TxtType = "UNDEF"
             SubClass = feature.GetField('SubClasses')
             if SubClass is None:
-                addHinweis(tr('missing SubClasses: ') + shpdat)
+                addHinweis(tr("missing field 'SubClasses' in: ") + shpdat)
             else:
                 # AcDbEntity:AcDbMText
                 # AcDbEntity:AcDbText:AcDbText
@@ -266,7 +272,7 @@ def DBFedit (shpdat,bFormat):
                     TxtType = "TEXT"
             att=feature.GetField('ogr_style') #http://www.gdal.org/ogr_feature_style.html
             if att is None:
-                addHinweis(tr('missing att: ') + shpdat)
+                addHinweis(tr("missing field 'ogr_style' in: ") + shpdat)
             else:
                 sArt,sDaten = trennArtDaten(att)
                 #if att[:6] == "LABEL(":
@@ -312,7 +318,7 @@ def DBFedit (shpdat,bFormat):
                     else:
                         # Text retten
                         #feature.SetField('plaintext', feature.GetField('Text'))
-                        addFehler(tr('incomplete ogr_style: ') + att)
+                        addFehler(tr("incomplete field 'ogr_style': ") + tryDecode(param,sCharSet))
                     
                     if sArt == "LABEL":
                         # der eigentlichen Text
@@ -353,20 +359,4 @@ def DBFedit (shpdat,bFormat):
     source.Destroy()
     
 if __name__ == "__main__":
-    #from PyQt4 import QtGui
-    #app = QtGui.QApplication(sys.argv)
-    DBFedit ('c:/users/jungha~1/appdata/local/temp/{D5E6A1F8-392F-4241-A0BD-5CED09CFABC7}//5183f1d1-fa32-4112-b8e8-1e02578d36fbP.shp', True)
-    """
-    w='LABEL(f:"Arial",t:"11\L06e",s:2.4g,c:#000000)'
-    w='LABEL(f:"Arial",t:"{\fArial|b0|i1|c0|p34;48}",s:2.5g,p:8,c:#260000)'
-    t='{\fArial|b0|i1|c0|p34;48}'
-    if w.find(r'\L') <> -1 or w.find('%%u') <> -1:
-        #print "unterstrichen"
-    #print w.find(r'\L'),w.find('%%u')
-
-    #print fnctxtOGRtoQGIS(5)
-    #debugDBFogr_style('c:/users/jungha~1/appdata/local/temp/{D5E6A1F8-392F-4241-A0BD-5CED09CFABC7}//6839ea99-1335-45bd-bb8c-79cb4dbc9a94P.shp')
-    """
-    #if len(getFehler()) > 0:
-    #    errbox("\n\n".join(getFehler()))
     dummy=1

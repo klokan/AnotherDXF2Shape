@@ -2,6 +2,8 @@
 """
 /***************************************************************************
  clsDXFTools
+    Änderungen V0.7:
+        21.02.17: Shape grundsätzlich als Kopie, weil auch Leerzeichen im Pfad zu Problemen führt 
     Änderungen V0.5:
         20.12.16 
             - Layer auf transparent 50%
@@ -321,7 +323,7 @@ def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet,  bCol,bLayer,
     uiParent.SetDatAktionGesSchritte(listDXFDatNam.count())
     for i in xrange(listDXFDatNam.count()):
         AktDXFDatNam=listDXFDatNam.item(i).text() 
-        uiParent.SetDatAktionText(tr("Import: " + AktDXFDatNam ))
+        uiParent.SetDatAktionText(tr("Import: " + AktDXFDatNam.encode("utf8") ))
         uiParent.SetDatAktionAktSchritt(i+1)
         
         AktList,AktOpt,ProjektName, Kern = ProjDaten4Dat(AktDXFDatNam,bCol,bLayer, bSHPSave)
@@ -366,24 +368,24 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
     # 21.11.16: ab 2.18 bringt die Umwandlung in einen String keinen Fehler mehr
     #           deshalb neue Strategie zum Erkennen der Umlaute
     
-    if ifAscii(DXFDatNam):
-        korrDXFDatNam=DXFDatNam
-    else:
-        uiParent.SetAktionGesSchritte(2)
-        uiParent.SetAktionText(tr("Copy DXF-File"))
-        uiParent.SetAktionAktSchritt(1)
-        korrDXFDatNam=(EZUTempDir() + str(uuid.uuid4()) + '.dxf')
-        copyfile(DXFDatNam, korrDXFDatNam)
-        printlog ("Copy" + DXFDatNam + ' --> ' + korrDXFDatNam)
+    # 21.02.17: grundsätzlich mit Kopie, da runalg die Datei sperrt und nicht mehr frei gibt
+    #if ifAscii(DXFDatNam):
+    #    korrDXFDatNam=DXFDatNam
+    #else:
+    uiParent.SetAktionGesSchritte(2)
+    uiParent.SetAktionText(tr("Copy DXF-File"))
+    uiParent.SetAktionAktSchritt(1)
+    korrDXFDatNam=(EZUTempDir() + str(uuid.uuid4()) + '.dxf')
+    copyfile(DXFDatNam, korrDXFDatNam)
+    #printlog ("Copy" + DXFDatNam + ' --> ' + korrDXFDatNam)
     
 
-    
     zE=0
     uiParent.SetAktionGesSchritte(len(AktList))
     for p in AktList:
         zE=zE+1       
         v = p.split(":")
-        uiParent.SetAktionText(tr("Edit Entity: " + Kern+v[0] ))
+        uiParent.SetAktionText(tr("Edit Entity: " + Kern.encode("utf8")+v[0] ))
         uiParent.SetAktionAktSchritt(zE)
         shpdat=shpPfad+Kern+v[0]+'.shp'
         opt=  ('-skipfailure %s -nlt %s -sql "select *, ogr_style from entities where OGR_GEOMETRY %s"') % (AktOpt,v[1],v[2])
@@ -393,24 +395,25 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
         # Dateiziel anpassen
         # ----------------------------------------------------------------------------      
         # ZielPfad bzw. Zielname dürfen keine Umlaute enthalten --> in temporäre Datei konvertieren
-        if ifAscii(shpdat):
-            korrSHPDatNam=shpdat
-        else:
-            korrSHPDatNam=(EZUTempDir() + str(uuid.uuid4()) + '.shp')           
+        # 21.02.17: Leerzeichen im Pfad funktionieren auch nicht, deshalb grundsätzlich alsd Kopie
+        #if ifAscii(shpdat):
+        #    korrSHPDatNam=shpdat
+        #else:
+        korrSHPDatNam=(EZUTempDir() + str(uuid.uuid4()) + '.shp')           
 
-        #hinweislog ('gdalogr:convertformat'+','+korrDXFDatNam +'|layername=entities'+','+ '0'+','+ opt +','+ korrSHPDatNam)
+        hinweislog ('gdalogr:convertformat'+','+korrDXFDatNam +'|layername=entities'+','+ '0'+','+ opt +','+ '"' + korrSHPDatNam + '"')
 
         if processing.runalg('gdalogr:convertformat',korrDXFDatNam +'|layername=entities', 0, opt , korrSHPDatNam) is None:
             addFehler(tr("process 'gdalogr:convertformat' could not start please restart QGIS"))
         else:
             if os.path.exists(korrSHPDatNam):
-                DBFedit(korrSHPDatNam,bFormatText)
+                DBFedit(korrSHPDatNam,bFormatText,sCharSet)
                 if korrSHPDatNam <> shpdat:
                     # evtl. korrigierte Dateiname umbenennen
-                    printlog ("move:" + korrSHPDatNam + '-->' + shpdat)
+                    #printlog ("move:" + korrSHPDatNam + '-->' + shpdat)
                     move(korrSHPDatNam,shpdat)
                     for rest in glob(korrSHPDatNam[0:-4] + '.*'):
-                        printlog ("move:" + rest + '-->' + shpdat[0:-4] + rest[-4:])
+                        #printlog ("move:" + rest + '-->' + shpdat[0:-4] + rest[-4:])
                         move(rest,shpdat[0:-4] + rest[-4:])
                 
                 # ogr2ogr schreibt den EPSG-code nicht in die prj-Datei, dadurch kommt es beim Einbinden
@@ -524,9 +527,9 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
                         if not DelShapeDatBlock(shpdat):
                             DelShapeDatBlock(shpdat)
                 else:
-                    addFehler ("Option " + opt + " could not be executed")
+                    addFehler (tr("Option '%s' could not be executed")%  opt )
             else:  
-                addFehler(tr("Creation '" + shpdat + "' failed. Please look to the QGIS log message panel (OGR)"))
+                addFehler(tr("Creation '%s' failed. Please look to the QGIS log message panel (OGR)") % shpdat )
 
 
     uiParent.SetAktionGesSchritte(2)

@@ -24,7 +24,7 @@ from qgis.utils import os, sys
 from PyQt4.QtCore import QSettings
 from itertools import cycle, izip
 from PyQt4.QtGui import QMessageBox,QApplication
-from qgis.core import QgsMessageLog
+from qgis.core import QgsMessageLog, QCoreApplication
 import re
 import time 
 import os
@@ -33,32 +33,34 @@ import traceback
 import tempfile
 from glob import glob
 
+def tr( message):
+    """Get the translation for a string using Qt translation API.
 
+    We implement this ourselves since we do not inherit QObject.
 
+    :param message: String for translation.
+    :type message: str, QString
 
+    :returns: Translated version of message.
+    :rtype: QString
+    """
+    # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
+    return QCoreApplication.translate('clsDXFTools', message)
+    
 def fncDebugMode(): 
     return False
     
 glFehlerListe=[]
 glHinweisListe=[]
 def addFehler (Fehler): 
-    if type(Fehler) == str:
-        su=Fehler.decode("utf8")
-    else:
-        # 14.12.16 explizit in String, da tr() type QString liefert
-        su=str(Fehler)
-    glFehlerListe.append (su)
+    glFehlerListe.append (Fehler)
 def getFehler() :
     return glFehlerListe
 def resetFehler() :
     global glFehlerListe
     glFehlerListe = []  
 def addHinweis (Hinweis):
-    if type(Hinweis) == str:
-        su=Hinweis.decode("utf8")
-    else:
-        su=Hinweis
-    glHinweisListe.append (su)
+    glHinweisListe.append (Hinweis)
 def getHinweis() :
     return glHinweisListe
 def resetHinweis() :
@@ -83,7 +85,7 @@ def subLZF(Sonstiges = None):
     except:
         pass
     if fncDebugMode():
-        QMessageBox.critical( None,"PlugIn Laufzeitfehler" ,str(exc_type) + ": \nDatei: " + fname + "\nZeile: "+ str(tb_lineno) + ("\n" + Sonstiges if Sonstiges else ""))
+        QMessageBox.critical( None,tr("PlugIn Error") ,str(exc_type) + ": \nDatei: " + fname + "\nZeile: "+ str(tb_lineno) + ("\n" + Sonstiges if Sonstiges else ""))
     addFehler ("LZF:" + traceback.format_exc().replace("\n",chr(9)) + (chr(9) + Sonstiges if Sonstiges else ""))    
     
 def errbox (text,p=None):
@@ -152,9 +154,7 @@ def EZUTempDir():
     if os.path.exists(tmp):
         return tmp
     else:
-        QMessageBox.critical(None,tr("Program termination"), 
-                                  tr("Temporary directory\n") + tmp + "\n" + 
-                                  tr("can not be created"))
+        QMessageBox.critical(None,tr("Program termination"), tr("Temporary directory\n%s\ncan not be created")%tmp)
         return None
 
 def debuglog(text,p=None):
@@ -190,7 +190,7 @@ def printlog(text,p=None):
         try:
             print su.encode("utf-8")
         except:
-            print "printlog:Hinweis konnte nicht ausgegeben werden"
+            print tr("printlog:Tip can not view")
 
 def fncKorrDateiName (OrgName,Ersatz="_"):
     NeuTex=""
@@ -235,35 +235,16 @@ def toUTF8(uText):
         return a.decode("utf8")
     except:
         return uText    
-
-    
+        
+def tryDecode(txt,sCharset):
+    try:
+        re=txt.decode( sCharset) 
+        return re
+    except:
+        return '#decodeerror#'     
 
 if __name__ == "__main__":
-    print ("Immer" + ("Zusatz" if True else ""))
-    dblFaktor=1.3
-    s= "1.3"
-    sf = str(dblFaktor)
-    sf = u"1~~1~~" + sf + " * \"size\"~~"
-    print type(s), type(sf) , s == sf
-    """
-    print EZUTempDir()
-    print EZUTempClear(True)
-    import sys
-    from PyQt4.QtGui import *
-
-    app = QApplication(sys.argv)
-
-    listWidget = QListWidget()
-
-    for i in range(10):
-        item = QListWidgetItem("Item %i" % i)
-        listWidget.addItem(item)
-    for i in xrange(listWidget.count()):
-        AktDat=listWidget.item(i)
-        print AktDat.text()
-    listWidget.show()
-    sys.exit(app.exec_())
-    """
+    dummy=1
 
 
 

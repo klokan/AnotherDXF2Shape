@@ -5,7 +5,7 @@
     Änderungen V0.6:
         17.02.17
             - keine Anpassung der Fenstergröße in Abhängigkeit der Dateianzahl,
-              da das auf UHD7$K ohnehin nicht passt
+              da das auf UHD/4K ohnehin nicht passt
             - speichern der letzten Dialoggröße und Wiederherstellung bei Neustart
             - Einbau Resetknopf für Standardvoreinstellungen
             
@@ -210,16 +210,6 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         self.btnStart.clicked.connect(self.btnStart_clicked)          
         self.btnReset.clicked.connect(self.btnReset_clicked)  
         
-        # Per Code alle Elemente beschriften die ein  "\n" enthalten, denn  das kann der Form-Tranlator nicht
-        #self.chkCol.setText (self.tr(u"Geometriecollektion \n(Blöcke/Signaturen)\nseparat ausspielen"))
-        #self.chkLay.setText (self.tr(u"Layer einzeln gruppieren\n(zeitaufwändig)"))
-        #self.chkCol.setText (self.tr("use geometry collection"))
-        #self.chkLay.setText (self.tr("group layer" + "\n" + "(takes a long time)"))        
-        
-        #self.chkSHP.setText (self.tr(u"als Shape-Dateien speichern"))
-        #self.txtDXFDatNam.setPlaceholderText(self.tr(u"DXF-Datei eingeben")) 
-        #self.lbDXF.setText(self.tr(u"DXF-Quelldatei"))
-        
         self.StartHeight = self.height()
         self.StartWidth  = self.width()
         
@@ -339,19 +329,6 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
             self.listDXFDatNam.addItem(DXFDatName) 
             MerkAnz=Anz
         
-    """
-		# 17.02.17: Keine Anpassung mehr, da bei UHD/4K ohnehin  alles anders läuft
-		if MerkAnz > 1:
-            #self.listDXFDatNam.setMaximumHeight(1000)
-            self.listDXFDatNam.setMinimumHeight(40)
-            self.setMinimumHeight = self.StartMinHeight+150
-            if self.height() < self.StartHeight+150:
-                self.resize(self.width(),self.StartHeight+150)
-        else:
-            self.listDXFDatNam.setMinimumHeight(20)
-            self.setMinimumHeight = self.StartMinHeight
-            #self.resize(self.width(),self.StartHeight)
-    """    
 
     def browseZielPfad_clicked(self):
         s = QSettings( "EZUSoft", "ASHP2Shape" )
@@ -363,8 +340,7 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         shpDirName = QtGui.QFileDialog.getExistingDirectory(self, "Open Directory",lastSHPDir,flags)
         shpDirName=shpDirName.replace("\\","/")
         self.txtZielPfad.setText(shpDirName)
-        #SHPDir, Dummy = os.path.split(shpDirName)
-        #print "'" + SHPDir + "'" + "*"+"'" + Dummy + "'"
+
         if shpDirName <> "":
             s.setValue("lastSHPDir", shpDirName)
     
@@ -379,11 +355,7 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         s.setValue( "bUseColor4Poly", "Ja" if self.chkUseColor4Poly.isChecked() == True else "Nein")
         
         s.setValue( "iCodePage", self.cbCharSet.currentIndex())
-        
-        # nachfolgendes wird grundsätzlich immer gespeichert (nach RunMenue)
-        #s.setValue("SaveWidth", self.width)
-        #s.setValue("SaveHeight", self.height)
-        
+         
     
     def btnReset_clicked(self):
         result = QMessageBox.question(None,'Another DXF2Shape' , self.tr('Restore default settings'), QMessageBox.Yes | QMessageBox.No, QMessageBox.No)        
@@ -435,12 +407,6 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
             return
             
         self.OptSpeichern()
-        #           (DXFDatNam,shpPfad,  bSHPSave,                fontSize, fontSizeInMapUnits, bCol,bLayer)
-        #self.FormRunning(True)
-
-        #printlog (AktDat)
-        #printlog (self.txtDXFDatNam.text())
-        #return
     
         Antw = DXFImporter (self, self.listDXFDatNam, ZielPfad, self.chkSHP.isChecked(), self.cbCharSet.currentText(),self.chkCol.isChecked(),self.chkLay.isChecked(), self.chkUseTextFormat.isChecked(), self.chkUseColor4Point.isChecked(), self.chkUseColor4Line.isChecked(), self.chkUseColor4Poly.isChecked(), dblFaktor)
         self.FormRunning(False) # nur sicherheitshalber, falls in DXFImporter übersprungen/vergessen

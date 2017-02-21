@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>628</width>
-    <height>527</height>
+    <height>454</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -484,11 +484,17 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="maximumSize">
+        <size>
+         <width>80</width>
+         <height>80</height>
+        </size>
+       </property>
        <property name="text">
         <string/>
        </property>
        <property name="pixmap">
-        <pixmap>CaigosConnector:icon.png</pixmap>
+        <pixmap>AnotherDXF2Shape:icon.png</pixmap>
        </property>
        <property name="scaledContents">
         <bool>true</bool>
