@@ -2,6 +2,12 @@
 """
 /***************************************************************************
  clsDXFTools
+    Änderungen V0.7.1:
+        23.02.17
+            - Processingbibliothek  erst in den Funktionen selbst laden, um den Start von QGIS zu beschleunigen
+              das PlugIn nimmt angeblich fast 45s Startzeit, mit diesem Umbau wird daraus < 1s ohne dass die Zeit
+              später "nachgeholt" wird.
+        
     Änderungen V0.7:
         21.02.17: Shape grundsätzlich als Kopie, weil auch Leerzeichen im Pfad zu Problemen führt 
     Änderungen V0.5:
@@ -55,8 +61,7 @@ from shutil import copyfile
 import sys
 from PyQt4.QtGui import *
 from qgis.core import *
-import processing
-from processing.core.Processing import Processing
+
 from qgis.utils import *
 from fnc4all import *
 
@@ -67,6 +72,12 @@ from PyQt4.QtSql import QSqlDatabase, QSqlQuery, QSqlError
 from glob import glob
 from shutil import copyfile, move
 from clsDBase import DBFedit
+"""
+# 23.02.17
+# Processing erst in den Funktionen selbst laden, um den Start von QGIS zu beschleunigen
+import processing
+from processing.core.Processing import Processing
+"""
 
 def tr( message):
     """Get the translation for a string using Qt translation API.
@@ -268,6 +279,11 @@ def ProjDaten4Dat(AktDXFDatNam, bCol, bLayer, bSHPSave):
     return AktList,AktOpt,ProjektName, Kern
 
 def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet,  bCol,bLayer, bFormatText, bUseColor4Point, bUseColor4Line, bUseColor4Poly, dblFaktor ):    
+    # 23.02.17
+    # Processing erst hier Laden, um den Start von QGIS zu beschleunigen
+    import processing
+    from processing.core.Processing import Processing
+    
     # -----------------------------------------------------------------------------------------------    
     # 1. Löschen der alten Projekte und evtl. Ermittlung der zu überschreibenden Dateien
     delShp=[]
@@ -355,6 +371,11 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
     Antw=QgsVectorFileWriter.writeAsVectorFormat(mLay,memDat,  None, mLay.crs(), "ESRI Shapefile")
     qPrjDatName=memDat[0:-3] + 'qpj'
     """
+    # 23.02.17
+    # Processing erst hier Laden, um den Start von QGIS zu beschleunigen
+    import processing
+    from processing.core.Processing import Processing
+    
     resetFehler()
     resetHinweis()
     myGroups={}

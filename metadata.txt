@@ -10,8 +10,11 @@
 name=Another DXF Importer / DXF2Shape Converter
 qgisMinimumVersion=2.8
 description=Add DXF to QGIS and convert DXF to Shape
-version=0.7
-changelog=21.02.17 V0.7
+version=0.7.1
+changelog=26.02.17 V0.7.1
+        - Change of installation of the processing library to speed up the launch of QGIS
+
+	21.02.17 V0.7
         - Fix spaces in shape target path
 	- Fix encode problems
         
