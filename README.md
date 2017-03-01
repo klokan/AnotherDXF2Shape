@@ -12,8 +12,8 @@ Features:
       - Categorization by Layer
       - Group by Layer
       - multiple files can be imported at the same time (batch import) 
-      - optional: convert color from DXF
       - save a style file (qml) with the shapefile ('s name)
+      - optional: convert color from DXF
 
 Usage:
 After installation you can use the functions under the menu item:
