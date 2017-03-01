@@ -11,9 +11,10 @@ Features:
         transfer of individual text formats
       - Categorization by Layer
       - Group by Layer
-      - multiple files can be imported at the same time (batch import) 
       - save a style file (qml) with the shapefile ('s name)
       - optional: convert color from DXF
+      - multiple files can be imported at the same time (batch import) 
+
 
 Usage:
 After installation you can use the functions under the menu item:
