@@ -2,6 +2,9 @@
 """
 /***************************************************************************
  clsDXFTools
+    Änderungen V0.8:
+        01.03.17
+            - Speicherung der Darstellung in einer QML-Datei (Layer.saveNamedStyle (qmldat))
     Änderungen V0.7.1:
         23.02.17
             - Processingbibliothek  erst in den Funktionen selbst laden, um den Start von QGIS zu beschleunigen
@@ -409,6 +412,7 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
         uiParent.SetAktionText(tr("Edit Entity: " + Kern.encode("utf8")+v[0] ))
         uiParent.SetAktionAktSchritt(zE)
         shpdat=shpPfad+Kern+v[0]+'.shp'
+        qmldat=shpPfad+Kern+v[0]+'.qml'
         opt=  ('-skipfailure %s -nlt %s -sql "select *, ogr_style from entities where OGR_GEOMETRY %s"') % (AktOpt,v[1],v[2])
         #opt=  ('-skipfailure %s -nlt %s -where "OGR_GEOMETRY %s"') % (AktOpt,v[1],v[2])
         
@@ -416,7 +420,7 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
         # Dateiziel anpassen
         # ----------------------------------------------------------------------------      
         # ZielPfad bzw. Zielname dürfen keine Umlaute enthalten --> in temporäre Datei konvertieren
-        # 21.02.17: Leerzeichen im Pfad funktionieren auch nicht, deshalb grundsätzlich alsd Kopie
+        # 21.02.17: Leerzeichen im Pfad funktionieren auch nicht, deshalb grundsätzlich als Kopie
         #if ifAscii(shpdat):
         #    korrSHPDatNam=shpdat
         #else:
@@ -543,6 +547,7 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
                                     rule.appendChild(rule) 
                                     Layer.setRendererV2(renderer)                                         
                                     Layer.setLayerTransparency(50)
+                        Layer.saveNamedStyle (qmldat)
                     else:
                         Layer=None # um Datei löschen zu ermöglichen
                         if not DelShapeDatBlock(shpdat):
