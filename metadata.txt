@@ -11,7 +11,10 @@ name=Another DXF Importer / DXF2Shape Converter
 qgisMinimumVersion=2.8
 description=Add DXF to QGIS and convert DXF to Shape
 version=0.8
-changelog=01.03.17 V0.8
+changelog=13.03.17 V0.81
+        - Starterror with qgis 2.8 (Wien) fixed
+        
+        01.03.17 V0.8
         - save a style file (qml) with the shapefile ('s name)
 
         26.02.17 V0.7.1
