@@ -2,7 +2,7 @@
 """
 /***************************************************************************
  clsDBase
-    Änderungen V0.9:
+    Änderungen V0.81:
         03.03.17 
             - Untersteichung neben %%u jetzt auch %%U
             - Fehlerbehandlung in DBFedit wieder aktiviert
