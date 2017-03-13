@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 """
+    Stand 13.03.17
+        -Problem QGIS 2.8 beseitigt (from qgis.core import QgsMessageLog, QCoreApplication)
+    Stand 03.03.17
+        - Texte der Ausgabeboxen auf  beschränkt
 /***************************************************************************
  fnc4all
  KonverDXF to shape and add to QGIS
@@ -24,7 +28,8 @@ from qgis.utils import os, sys
 from PyQt4.QtCore import QSettings
 from itertools import cycle, izip
 from PyQt4.QtGui import QMessageBox,QApplication
-from qgis.core import QgsMessageLog, QCoreApplication
+from qgis.core import *
+#from qgis.core import QgsMessageLog, QCoreApplication
 import re
 import time 
 import os
@@ -87,14 +92,30 @@ def subLZF(Sonstiges = None):
     if fncDebugMode():
         QMessageBox.critical( None,tr("PlugIn Error") ,str(exc_type) + ": \nDatei: " + fname + "\nZeile: "+ str(tb_lineno) + ("\n" + Sonstiges if Sonstiges else ""))
     addFehler ("LZF:" + traceback.format_exc().replace("\n",chr(9)) + (chr(9) + Sonstiges if Sonstiges else ""))    
+
+def cut4view (fulltext,zeichen=1500,zeilen=15,anhang='\n\n                  ............. and many more .........\n'):
+    cut = False
+    ctext=fulltext
+    if len(fulltext) > zeichen:
+        cut=True
+        ctext=ctext[:zeichen]
     
+    arr=ctext.split('\n')
+    if len(arr) > zeilen:
+        cut = True
+        ctext= '\n'.join(arr[:zeilen])
+    if cut:
+        ctext=ctext + anhang
+    return ctext
+ 
 def errbox (text,p=None):
     su=text
     if type(text) == str:
-        su=text.decode("utf8")    
-    QMessageBox.critical(None, "PlugIn Fehler", su)
+        su=text.decode("utf8")
+
+    QMessageBox.critical(None, "PlugIn Error", cut4view(su))
     try:
-        QgsMessageLog.logMessage( su, u'EZUSoft:Fehler' )
+        QgsMessageLog.logMessage( su, u'EZUSoft:Error' )
     except:
         pass
 
@@ -102,8 +123,9 @@ def errbox (text,p=None):
 def msgbox (text):
     su=text
     if type(text) == str:
-        su=text.decode("utf8")    
-    QMessageBox.information(None, "PlugIn Hinweis", su)
+        su=text.decode("utf8") 
+    
+    QMessageBox.information(None, "PlugIn Hinweis", cut4view(su))
     try:
         QgsMessageLog.logMessage( su, u'EZUSoft:Hinweise' )
     except:
@@ -244,6 +266,7 @@ def tryDecode(txt,sCharset):
         return '#decodeerror#'     
 
 if __name__ == "__main__":
+    print cut4view('1\n\n2\n3\n4',1000,2)
     dummy=1
 
 
