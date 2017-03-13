@@ -12,7 +12,8 @@ qgisMinimumVersion=2.8
 description=Add DXF to QGIS and convert DXF to Shape
 version=0.8
 changelog=13.03.17 V0.81
-        - Starterror with qgis 2.8 (Wien) fixed
+        - Error fixed at startup with qgis 2.8
+        - use also textformat %%U 
         
         01.03.17 V0.8
         - save a style file (qml) with the shapefile ('s name)

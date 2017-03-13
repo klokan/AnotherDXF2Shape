@@ -2,6 +2,11 @@
 """
 /***************************************************************************
  clsDBase
+    Änderungen V0.9:
+        03.03.17 
+            - Untersteichung neben %%u jetzt auch %%U
+            - Fehlerbehandlung in DBFedit wieder aktiviert
+    
     Änderungen V0.7:
         21.02.17 
             - Kodierungsprobleme beseitigt
@@ -9,7 +14,7 @@
             - Ersterstellung
             
                                  A QGIS plugin
- KonverDXF to shape and add to QGIS
+ Konvert DXF to shape and add to QGIS
                              -------------------
         begin                : 2016-06-20
         git sha              : $Format:%H$
@@ -146,7 +151,7 @@ def splitText (fText,TxtType):
     # V3: \fTimes New Roman|i1|b0;Rue Presles   # MTEXT Datei PONT A CELLES 2010.dxf von pierre.mariemont
     # V4: \S558/15;                             # MTEXT komplette gebrochene Flurstücksnummer (Geograf)
     # ob Text oder MTEXT kann im Moment nicht immer unterschieden werden
-    
+
     underline = False
     bs = False
     uText = r""
@@ -160,9 +165,10 @@ def splitText (fText,TxtType):
         # 1. Formatierungen TEXT
         #    Die Codes sind nirgends definiert
         # %%u entfernen und ggf. underline setzen
-        if "%%u" in aktText:
+        # 03.03.17: in Geograf scheint man (auch) ein großes U zu nutzen
+        if "%%u".upper() in aktText.upper():
             underline=True
-            aktText = aktText.replace('%%u','')
+            aktText = aktText.replace('%%u','').replace('%%U','')
         # %%c ist Ø
         aktText = aktText.replace('%%c','Ø') # geht nur bei Unicode als Zeichensatz, hier muss noch irgendwas getan werden
     
@@ -258,7 +264,8 @@ def DBFedit (shpdat,bFormat,sCharSet):
     i=1
     feature = layer.GetNextFeature()
     while feature:
-        #try:
+        # 03.03.17 Fehlerbehandlung wieder aktiviert
+        try:
             TxtType = "UNDEF"
             SubClass = feature.GetField('SubClasses')
             if SubClass is None:
@@ -329,7 +336,6 @@ def DBFedit (shpdat,bFormat,sCharSet):
                             t,underline,font, FlNum = splitText(AktText,TxtType)
                             #print t,underline,TxtType,SubClass
                             feature.SetField('plaintext', t)
-                            
                             # evtl. Formtierungen überschreiben
                             if bFormat:
                                 #print "xx",font
@@ -347,15 +353,15 @@ def DBFedit (shpdat,bFormat,sCharSet):
                             else:
                                 feature.SetField('underline', False)
                 layer.SetFeature(feature)
-                #break
-        #except:
-        #    if att is None:
-        #        subLZF ()
-        #    else:
-        #        subLZF ('ogr_style:' + att)
-        
             feature = layer.GetNextFeature()
-
+            
+        except:
+            if att is None:
+                subLZF ()
+            else:
+                subLZF ('ogr_style:' + att)
+                
+            feature = layer.GetNextFeature()
     source.Destroy()
     
 if __name__ == "__main__":
