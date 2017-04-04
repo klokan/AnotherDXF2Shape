@@ -53,7 +53,11 @@ class clsADXF2Shape:
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
-        locale = QSettings().value('locale/userLocale')[0:2]
+        locale = QSettings().value('locale/userLocale')
+        if locale is None:
+            locale = 'en'
+        else:
+            locale= QSettings().value('locale/userLocale')[0:2]
         locale_path = os.path.join(
             self.plugin_dir,
             'i18n',
@@ -200,4 +204,8 @@ class clsADXF2Shape:
         cls.RunMenu()
 
 if __name__ == "__main__":
-    dummy= "xxx"
+    app = QApplication(sys.argv)
+    c=clsADXF2Shape(None)
+    window = uiAbout()
+    window.show()
+    sys.exit(app.exec_())

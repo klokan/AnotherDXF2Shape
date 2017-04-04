@@ -2,6 +2,10 @@
 """
 /***************************************************************************
  clsDXFTools
+    !!! ToDo: Übersetzung funktioniert nicht !!!!!!!
+    Änderungen V0.81.2:
+        processing.runalg funktioniert auf einem einzelnen Rechner nicht: Protokoll unter OGR: existiert nicht
+        gefixt indem "|layername=entities" ersatzlos gestrichen
     Änderungen V0.8:
         01.03.17
             - Speicherung der Darstellung in einer QML-Datei (Layer.saveNamedStyle (qmldat))
@@ -426,9 +430,9 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
         #else:
         korrSHPDatNam=(EZUTempDir() + str(uuid.uuid4()) + '.shp')           
 
-        hinweislog ('gdalogr:convertformat'+','+korrDXFDatNam +'|layername=entities'+','+ '0'+','+ opt +','+ '"' + korrSHPDatNam + '"')
+        hinweislog ('gdalogr:convertformat'+','+korrDXFDatNam +','+ '0'+','+ opt +','+ '"' + korrSHPDatNam + '"')
 
-        if processing.runalg('gdalogr:convertformat',korrDXFDatNam +'|layername=entities', 0, opt , korrSHPDatNam) is None:
+        if processing.runalg('gdalogr:convertformat',korrDXFDatNam , 0, opt , korrSHPDatNam) is None:
             addFehler(tr("process 'gdalogr:convertformat' could not start please restart QGIS"))
         else:
             if os.path.exists(korrSHPDatNam):

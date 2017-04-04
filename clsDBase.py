@@ -365,4 +365,7 @@ def DBFedit (shpdat,bFormat,sCharSet):
     source.Destroy()
     
 if __name__ == "__main__":
+    w='-0.72g'
+    z,t=ZahlTextSplit(w)
+    #print (z,t)
     dummy=1

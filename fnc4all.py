@@ -266,6 +266,9 @@ def tryDecode(txt,sCharset):
         return '#decodeerror#'     
 
 if __name__ == "__main__":
+    #from PyQt5.QtCore import QSettings
+    errbox ("ff")
+    print (QSettings().value('locale/userLocale'))
     print cut4view('1\n\n2\n3\n4',1000,2)
     dummy=1
 
