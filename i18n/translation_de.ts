@@ -3,82 +3,82 @@
 <context>
     <name>@default</name>
     <message>
-        <location filename="../clsDXFTools.py" line="216"/>
+        <location filename="../clsDXFTools.py" line="232"/>
         <source>Overwriting the following files</source>
         <translation>Bestehende Dateien überschreiben</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="294"/>
+        <location filename="../clsDXFTools.py" line="315"/>
         <source>Cancel</source>
         <translation>Abbruch</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="388"/>
+        <location filename="../clsDXFTools.py" line="414"/>
         <source>Edit Entity: </source>
         <translation>Bearbeite Entity: </translation>
     </message>
     <message>
-        <location filename="../fnc4all.py" line="157"/>
+        <location filename="../fnc4all.py" line="179"/>
         <source>Program termination</source>
         <translation>Programmabbruch</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="376"/>
+        <location filename="../clsDXFTools.py" line="402"/>
         <source>Copy DXF-File</source>
         <translation>DXF-Datei kopieren</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="209"/>
+        <location filename="../clsDXFTools.py" line="225"/>
         <source>DSDB:file remove error</source>
         <translation>DSDB:Datei kann nicht gelöscht werden</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="227"/>
+        <location filename="../clsDXFTools.py" line="243"/>
         <source>DZD:file remove error</source>
         <translation>DZD:Datei kann nicht gelöscht werden</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="326"/>
+        <location filename="../clsDXFTools.py" line="347"/>
         <source>Import: </source>
         <translation>Import:</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="294"/>
+        <location filename="../clsDXFTools.py" line="315"/>
         <source>Please set target</source>
         <translation>Bitte Ziel festlegen</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="407"/>
+        <location filename="../clsDXFTools.py" line="434"/>
         <source>process &apos;gdalogr:convertformat&apos; could not start please restart QGIS</source>
         <translation>Prozess &apos;gdalogr:convertformat&apos; konnte nicht gestartet werden. Bitte starte QGIS neu</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="315"/>
+        <location filename="../clsDXFTools.py" line="336"/>
         <source>process init - please wait</source>
         <translation>Prozessinitialisierung - Bitte warten</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="536"/>
+        <location filename="../clsDXFTools.py" line="564"/>
         <source>Switch on the display</source>
         <translation>Darstellung einschalten</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="530"/>
+        <location filename="../clsDXFTools.py" line="558"/>
         <source>Option &apos;%s&apos; could not be executed</source>
         <translation>Option &apos;%s&apos; kann nicht ausgeführt werden</translation>
     </message>
     <message>
-        <location filename="../clsDXFTools.py" line="532"/>
+        <location filename="../clsDXFTools.py" line="560"/>
         <source>Creation &apos;%s&apos; failed. Please look to the QGIS log message panel (OGR)</source>
         <translation>Erstellung &apos;%s&apos; gescheitert. Please look to the QGIS log message panel (OGR)</translation>
     </message>
     <message>
-        <location filename="../fnc4all.py" line="88"/>
+        <location filename="../fnc4all.py" line="93"/>
         <source>PlugIn Error</source>
         <translation>PlugIn Fehler</translation>
     </message>
     <message>
-        <location filename="../fnc4all.py" line="157"/>
+        <location filename="../fnc4all.py" line="179"/>
         <source>Temporary directory
 %s
 can not be created</source>
@@ -87,7 +87,7 @@ can not be created</source>
 kann nicht erstellt werden</translation>
     </message>
     <message>
-        <location filename="../fnc4all.py" line="193"/>
+        <location filename="../fnc4all.py" line="215"/>
         <source>printlog:Tip can not view</source>
         <translation>Hinweis kann nicht angezeigt werden</translation>
     </message>
@@ -174,17 +174,17 @@ und optionale Speicherung als &lt;span&gt;Shape&lt;/span&gt;&lt;/span&gt;&lt;/p&
 <context>
     <name>clsADXF2Shape</name>
     <message>
-        <location filename="../clsADXF2Shape.py" line="188"/>
+        <location filename="../clsADXF2Shape.py" line="192"/>
         <source>&amp;DXF Import/Convert</source>
         <translation>&amp;DXF Import/Konvertierung</translation>
     </message>
     <message>
-        <location filename="../clsADXF2Shape.py" line="172"/>
+        <location filename="../clsADXF2Shape.py" line="176"/>
         <source>Import or Convert</source>
         <translation>Importieren/Konvertieren</translation>
     </message>
     <message>
-        <location filename="../clsADXF2Shape.py" line="178"/>
+        <location filename="../clsADXF2Shape.py" line="182"/>
         <source>About/Help</source>
         <translation>Über das Programm/Hilfe</translation>
     </message>
