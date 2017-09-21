@@ -37,20 +37,9 @@ import getpass
 import traceback
 import tempfile
 from glob import glob
-
-def tr( message):
-    """Get the translation for a string using Qt translation API.
-
-    We implement this ourselves since we do not inherit QObject.
-
-    :param message: String for translation.
-    :type message: str, QString
-
-    :returns: Translated version of message.
-    :rtype: QString
-    """
-    # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
-    return QCoreApplication.translate('clsDXFTools', message)
+    
+def tr(self, message):
+    return QCoreApplication.translate('@default', message)
     
 def fncDebugMode(): 
     return False
@@ -170,14 +159,19 @@ def EZUTempClear(All=None):
 
 def EZUTempDir():
     # 28.06.16 Replce() eingefügt, da processing.runalg sehr empfindlich hinsichtlich Dateinamen ist
-    tmp=(tempfile.gettempdir()).replace("\\","/") + "/{D5E6A1F8-392F-4241-A0BD-5CED09CFABC7}/"
-    if not os.path.exists(tmp):
-        os.makedirs(tmp) 
-    if os.path.exists(tmp):
-        return tmp
-    else:
+    try:
+        tmp=(tempfile.gettempdir()).replace("\\","/") + "/{D5E6A1F8-392F-4241-A0BD-5CED09CFABC7}/"
+        if not os.path.exists(tmp):
+            os.makedirs(tmp) 
+        if os.path.exists(tmp):
+            return tmp
+        else:
+            QMessageBox.critical(None,tr("Program termination"), tr("Temporary directory\n%s\ncan not be created")%tmp)
+            return None
+    except:
         QMessageBox.critical(None,tr("Program termination"), tr("Temporary directory\n%s\ncan not be created")%tmp)
         return None
+    
 
 def debuglog(text,p=None):
     if fncDebugMode():
@@ -207,12 +201,12 @@ def printlog(text,p=None):
     if type(text) == str:
         su=text.decode("utf8")        
     try:
-        print su
+        print (su)
     except:
         try:
-            print su.encode("utf-8")
+            print (su.encode("utf-8"))
         except:
-            print tr("printlog:Tip can not view")
+            print (tr("printlog:Tip can not view"))
 
 def fncKorrDateiName (OrgName,Ersatz="_"):
     NeuTex=""
@@ -266,11 +260,13 @@ def tryDecode(txt,sCharset):
         return '#decodeerror#'     
 
 if __name__ == "__main__":
-    #from PyQt5.QtCore import QSettings
-    errbox ("ff")
-    print (QSettings().value('locale/userLocale'))
-    print cut4view('1\n\n2\n3\n4',1000,2)
-    dummy=1
+    cls=fnc4all(None)
+    cls.NurMalSo()
+    addFehler(u"ähgfhgiuq")
+    x=getFehler()
+    print (type(x))
+    print("\n\n".join(getFehler()))
+
 
 
 

@@ -2,6 +2,8 @@
 """
 /***************************************************************************
  uiADXF2Shape
+    Änderungen V0.9:
+        Georeferenzieruzngsmodul
     Änderungen V0.6:
         17.02.17
             - keine Anpassung der Fenstergröße in Abhängigkeit der Dateianzahl,
@@ -37,11 +39,13 @@
 """
 
 from qgis.utils import os, sys
+import os
 from PyQt4.QtCore import QSettings,QSize
 from PyQt4 import QtGui, uic
 from PyQt4.QtGui import QMessageBox, QDialogButtonBox
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from fnc4all import *
+from TransformTools import *
 from clsDXFTools import DXFImporter
 import clsADXF2Shape
 
@@ -206,7 +210,27 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         self.setupUi(self)
         self.browseDXFDatei.clicked.connect(self.browseDXFDatei_clicked)    
         self.browseZielPfad.clicked.connect(self.browseZielPfad_clicked) 
-        self.chkSHP.clicked.connect(self.chkSHP_clicked)    
+        self.chkSHP.clicked.connect(self.chkSHP_clicked)
+
+        self.listDXFDatNam.currentRowChanged.connect(self.wld4listDXFDatNam)
+        self.chkTransform.clicked.connect(self.chkTransform_clicked) 
+        self.optTParam.clicked.connect(self.ManageTransformSettings) 
+        self.optTPoint.clicked.connect(self.ManageTransformSettings) 
+        
+        self.cbTArt.currentIndexChanged.connect(self.ManageTransformFelder4Kombi) 
+        
+        self.tabTPoints.cellChanged.connect(self.KorrAktTableValue)
+        self.leTXOff.editingFinished.connect(self.KorrAktParam_leTXOff)
+        self.leTYOff.editingFinished.connect(self.KorrAktParam_leTYOff)
+        # self.leTScale.editingFinished.connect(self.KorrAktParam_leTScale) """ Funktion aktuell entfernt
+        
+        self.optTWld.clicked.connect(self.ManageTransformSettings) 
+        self.optTWld.setChecked (True)
+        self.cbTArt.addItem(self.tr("1 point (move)"))
+        self.cbTArt.addItem(self.tr("2 point (Helmert)"))
+        self.cbTArt.addItem(self.tr("3 point (Georef)"))
+        self.cbTArt.addItem(self.tr("4 point (Georef)"))
+        
         self.btnStart.clicked.connect(self.btnStart_clicked)          
         self.btnReset.clicked.connect(self.btnReset_clicked)  
         
@@ -214,6 +238,7 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         self.StartWidth  = self.width()
         
         self.SetzeVoreinstellungen()
+        self.TableNone2Empty(self.tabTPoints)
         listEmpty = self.tr("no DXF-file selected")
         self.listDXFDatNam.addItem (listEmpty)
         self.listDXFDatNam.setEnabled(False)  
@@ -235,7 +260,195 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
         return QCoreApplication.translate('uiADXF2Shape', message)
     
+    def wld4listDXFDatNam (self):
+        if self.chkTransform.isChecked() and self.optTWld.isChecked():
+            # nur wenn Worldfile aktiv ist
+            if self.listDXFDatNam.currentItem() == None:
+                AktDxfDatNam = self.listDXFDatNam.item(0).text()
+            else:
+                AktDxfDatNam = self.listDXFDatNam.currentItem().text()
+            if AktDxfDatNam != self.tr("no DXF-file selected"):
+                self.FillPoint4Wld (os.path.splitext(AktDxfDatNam)[0] + ".wld")
+    
+
+    def TableNone2Empty( self, tw):
+        for row in xrange(tw.rowCount()):
+            for col in xrange(tw.columnCount()):
+                if tw.item(row,col) == None:
+                    item = QtGui.QTableWidgetItem('')
+                    tw.setItem(row, col, item)
+    
+    def FillPoint4Wld (self,wldname):
+        self.tabTPoints.setVisible(False)
+        if os.path.exists(wldname):
+            p1, p2, Fehler = ReadWldDat(wldname)
+            if Fehler != None:
+                self.lbT4Wld.setText (wldname + ": " + Fehler)
+            
+            if p1 != None:
+                if p2 == None:
+                    self.tabTPoints.setRowCount(1)
+                else:
+                    self.tabTPoints.setRowCount(2)
+                self.TableNone2Empty(self.tabTPoints)
+                
+                self.tabTPoints.setVisible(True)
+                self.tabTPoints.item(0,0).setText (str(p1[0][0]));self.tabTPoints.item(0,1).setText (str(p1[0][1]))
+                self.tabTPoints.item(0,2).setText (str(p1[1][0]));self.tabTPoints.item(0,3).setText (str(p1[1][1]))                
+                if p2 != None:
+                    self.tabTPoints.item(1,0).setText (str(p2[0][0]));self.tabTPoints.item(1,1).setText (str(p2[0][1]))
+                    self.tabTPoints.item(1,2).setText (str(p2[1][0]));self.tabTPoints.item(1,3).setText (str(p2[1][1]))    
+        else:
+            self.lbT4Wld.setText (wldname + ": " + self.tr("file not found"))
+            
+        
+    def KorrAktTableValue(self):
+        if self.tabTPoints.currentItem() != None:
+            if self.tabTPoints.currentItem().text() !="":
+                try:
+                    dblValue=float(self.tabTPoints.currentItem().text().replace(",","."))
+                except:
+                    msgbox (self.tr("There is no float value"))
+                    dblValue=""
+                    self.tabTPoints.scrollToItem(self.tabTPoints.currentItem()) # funktioniert nicht
+                self.tabTPoints.currentItem().setText(str(dblValue))
+
+    def KorrAktParam_leTXOff (self):
+        if self.leTXOff.text() !="":
+            try:
+                dblValue=float(self.leTXOff.text().replace(",","."))
+            except:
+                msgbox (self.tr("There is no float value"))
+                dblValue=""
+                self.leTXOff.setFocus()
+            self.leTXOff.setText(str(dblValue))
+    def KorrAktParam_leTYOff (self):
+        if self.leTYOff.text() !="":
+            try:
+                dblValue=float(self.leTYOff.text().replace(",","."))
+            except:
+                msgbox (self.tr("There is no float value"))
+                dblValue=""
+                self.leTYOff.setFocus()
+            self.leTYOff.setText(str(dblValue))
+    """ Funktion aktuell entfernt
+    def KorrAktParam_leTScale (self):
+        if self.leTScale.text() !="":
+            try:
+                intValue=int(float(self.leTScale.text().replace(",",".")))
+            except:
+                msgbox (self.tr("There is no integer value"))
+                intValue=""
+                self.leTScale.setFocus()
+            if intValue==0:
+                msgbox (self.tr("scale with zero is not allowed"))
+                intValue=""
+                self.leTScale.setFocus()           
+            self.leTScale.setText(str(intValue))        
+    """
+    
+    def CheckKonstTransWerte(self):
+    # Bei Fehler Rückgabe False und Fehlertext
+    # sonst True und optional Punktliste p
+        Feh = ""
+        p=[[],[],[]]
+        # 1) Worldfile kontrollieren ---> erfolgt direkt beim Import, da mehrere Dateien (wld's) im Stapel sein können
+        if self.optTWld.isChecked():
+            return True, None
+        
+        # 2) Tabellenwerte kontrollieren
+        if  self.optTPoint.isChecked():
+            # kein Tabellenfeld darf ohne Wert sein
+            for row in range(self.tabTPoints.rowCount()):
+                for col in range(self.tabTPoints.columnCount()): # 0-3
+                    if self.tabTPoints.item(row,col) == None:
+                        Feh = "(" + str(row+1) + "," + str(col+1) + ")" + self.tr(" value missing\n")
+                        return False, Feh
+
+                    if self.tabTPoints.item(row,col).text().strip() == "":
+                        Feh = "(" + str(row+1) + "," + str(col+1) + ")" + self.tr(" value missing\n")
+                        return False, Feh
+                p[row]=[[float(self.tabTPoints.item(row,0).text()),float(self.tabTPoints.item(row,1).text())],[float(self.tabTPoints.item(row,2).text()),float(self.tabTPoints.item(row,3).text())]]
+            # restliche Punkte per Helmert ermitteln
+            if self.tabTPoints.rowCount() == 1:
+                # Punkte 2 und 3 ermitteln
+                p[0], p[1], p[2] = Helmert4Points(p[0], None)
+            if self.tabTPoints.rowCount() == 2:
+                # Punkt 3 ermitteln
+                p[0], p[1], p[2] = Helmert4Points(p[0],p[1])
+            return True, p
+        
+        # 3) (Verschiebungs-) Parameter kontrollieren
+        if  self.optTParam.isChecked():
+            # Verschiebung immer
+            if self.leTXOff.text() == "":
+                Feh = Feh  + self.tr("X-Offset - value missing\n")
+                return False, Feh
+            if self.leTYOff.text() == "":
+                Feh = Feh  + self.tr("Y-Offset - value missing\n")  
+                return False, Feh
+
+            # beliebige Punkte
+            xOffs=float(self.leTXOff.text())
+            yOffs=float(self.leTYOff.text())
+            p[0]=[[0.0,0.0],[0.0+xOffs,0.0+yOffs]]
+            p[1]=[[1000.0,0.0],[1000.0+xOffs,0.0+yOffs]]
+            p[2]=[[0.0,1000.0],[0.0+xOffs,1000.0+yOffs]]
+            """ aktuell nicht realisiert
+            if self.cbTArt.currentIndex() == 1:
+                if self.leTScale.text() == "":
+                    Feh = Feh  + self.tr("Scale - value missing\n")
+            """
+            return True, p
+        # hier darf der Code nicht rauskommen
+        errbox ("Programmierfehler")
+    
+    def ManageTransformFelder4Kombi(self):
+        if  self.optTPoint.isChecked():
+            self.tabTPoints.setRowCount(self.cbTArt.currentIndex()+1)
+        
+        self.lbTScale.setVisible(False) #aktuell nicht realisiert
+        self.leTScale.setVisible(False) #aktuell nicht realisiert
+        """ aktuell nicht realisiert
+        if self.optTParam.isChecked():
+            self.lbTScale.setVisible(self.cbTArt.currentIndex() == 1)
+            self.leTScale.setVisible(self.cbTArt.currentIndex() == 1)
+        """
+            
+    def ManageTransformSettings(self):
+        if self.chkTransform.isChecked():
+            self.tabSetting.setTabEnabled(1,True)  # Register aktivieren          
+            
+            self.tabTPoints.setVisible(self.optTPoint.isChecked() or self.optTWld.isChecked()) # Passpunkttabelle
+            self.tabTPoints.setEnabled(self.optTPoint.isChecked())
+            
+            self.grpTParam.setVisible(self.optTParam.isChecked())  # Parameterliste
+            self.cbTArt.setVisible(self.optTPoint.isChecked())     # aktuell nur bei Punkttabelle : (not self.optTWld.isChecked())
+            self.lbT4Wld.setVisible(self.optTWld.isChecked())            
+            
+            
+            #self.cbTArt.clear()
+            if self.optTParam.isChecked():
+                pass
+                """aktuell nicht realisiert
+                self.cbTArt.addItem(self.tr("Move"))
+                self.cbTArt.addItem(self.tr("Move and scale")) aktuell nicht realisiert
+                """
+            if  self.optTPoint.isChecked():
+                self.cbTArt.setCurrentIndex(self.tabTPoints.rowCount()-1)
+                
+            if  self.optTWld.isChecked():
+                # schon mal aktuelle Datei checken (da Ereignis Dateiwechsel fehlt)
+                self.wld4listDXFDatNam()
+        else:
+            # Registerkarte deaktivieren
+            self.tabSetting.setTabEnabled(1,False) 
+
+
+    
     def SetzeVoreinstellungen(self):
+        self.ManageTransformSettings()
+        
 	    # Voreinstellungen setzen
         s = QSettings( "EZUSoft", "ADXF2Shape" )
         
@@ -244,7 +457,7 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         SaveHeight = int(s.value("SaveHeight", "0"))
         if SaveWidth > self.minimumWidth() and SaveHeight > self.minimumHeight():
             self.resize(SaveWidth,SaveHeight)
-        
+
         
         bGenCol = True if s.value( "bGenCol", "Nein" ) == "Ja" else False
         self.chkCol.setChecked(bGenCol)
@@ -288,6 +501,11 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
             #self.listDXFDatNam.installEventFilter(QLineEditDropHandler(self))
             #self.txtZielPfad.installEventFilter(QLineEditDropHandler(self))
 
+    def chkTransform_clicked(self):
+        self.ManageTransformSettings()
+        if self.chkTransform.isChecked():
+            self.tabSetting.setCurrentIndex(1)
+        
     def chkSHP_clicked(self):
         bGenSHP=self.chkSHP.isChecked()
         self.lbSHP.setEnabled(bGenSHP)      
@@ -328,7 +546,10 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
             Anz=Anz+1        
             self.listDXFDatNam.addItem(DXFDatName) 
             MerkAnz=Anz
-        
+        if Anz > 0:
+            self.listDXFDatNam.item(0).setSelected(True)
+            self.wld4listDXFDatNam()
+
 
     def browseZielPfad_clicked(self):
         s = QSettings( "EZUSoft", "ASHP2Shape" )
@@ -406,9 +627,22 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
             self.txtFaktor.setText("1.3")
             return
             
+        #4. Test ob allgemeine Transformationswerte korrekt
+        if self.chkTransform.isChecked():
+            # Bei Fehler Rückgabe False und Fehlertext
+            # sonst True und optional Punktliste p
+            Korrekt, DreiPassPunkte=self.CheckKonstTransWerte()
+            if not Korrekt:
+                errbox (DreiPassPunkte)
+                self.tabSetting.setCurrentIndex(1) # registerkarte aktivieren
+                return
+        else:
+            DreiPassPunkte=None
+            
         self.OptSpeichern()
-    
-        Antw = DXFImporter (self, self.listDXFDatNam, ZielPfad, self.chkSHP.isChecked(), self.cbCharSet.currentText(),self.chkCol.isChecked(),self.chkLay.isChecked(), self.chkUseTextFormat.isChecked(), self.chkUseColor4Point.isChecked(), self.chkUseColor4Line.isChecked(), self.chkUseColor4Poly.isChecked(), dblFaktor)
+        self.tabSetting.setCurrentIndex(0) # erste Registerkarte, damit Laufbalken sichtbar
+        
+        Antw = DXFImporter (self, self.listDXFDatNam, ZielPfad, self.chkSHP.isChecked(), self.cbCharSet.currentText(),self.chkCol.isChecked(),self.chkLay.isChecked(), self.chkUseTextFormat.isChecked(), self.chkUseColor4Point.isChecked(), self.chkUseColor4Line.isChecked(), self.chkUseColor4Poly.isChecked(), dblFaktor, self.chkTransform.isChecked(), DreiPassPunkte)
         self.FormRunning(False) # nur sicherheitshalber, falls in DXFImporter übersprungen/vergessen
         
     
@@ -455,6 +689,8 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         Anz(self.chkCol); Anz(self.chkLay); Anz(self.chkSHP)
         Anz(self.lbFaktor);Anz(self.txtFaktor)
         
+        Anz(self.chkTransform)
+        Anz(self.tabSetting)
 
 
         if bRun:
@@ -482,5 +718,12 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         s.setValue("SaveWidth", str(self.width()))
         s.setValue("SaveHeight", str(self.height()))
 if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
+    """
+    app = QApplication(sys.argv)
+    from uiADXF2Shape import uiADXF2Shape
+    
+    window = uiADXF2Shape()
+    window.show()
+    sys.exit(app.exec_())
+    """
 

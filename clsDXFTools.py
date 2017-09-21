@@ -2,7 +2,8 @@
 """
 /***************************************************************************
  clsDXFTools
-    !!! ToDo: Übersetzung funktioniert nicht !!!!!!!
+    Änderungen V0.9:
+        Georeferenzieruzngsmodul
     Änderungen V0.81.2:
         processing.runalg funktioniert auf einem einzelnen Rechner nicht: Protokoll unter OGR: existiert nicht
         gefixt indem "|layername=entities" ersatzlos gestrichen
@@ -79,6 +80,7 @@ from PyQt4.QtSql import QSqlDatabase, QSqlQuery, QSqlError
 from glob import glob
 from shutil import copyfile, move
 from clsDBase import DBFedit
+from TransformTools import ReadWldDat,Helmert4Points
 """
 # 23.02.17
 # Processing erst in den Funktionen selbst laden, um den Start von QGIS zu beschleunigen
@@ -285,7 +287,7 @@ def ProjDaten4Dat(AktDXFDatNam, bCol, bLayer, bSHPSave):
     
     return AktList,AktOpt,ProjektName, Kern
 
-def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet,  bCol,bLayer, bFormatText, bUseColor4Point, bUseColor4Line, bUseColor4Poly, dblFaktor ):    
+def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet,  bCol,bLayer, bFormatText, bUseColor4Point, bUseColor4Line, bUseColor4Poly, dblFaktor, chkTransform, DreiPassPunkte ):    
     # 23.02.17
     # Processing erst hier Laden, um den Start von QGIS zu beschleunigen
     import processing
@@ -360,7 +362,28 @@ def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet,  bCol,bLayer,
         iface.legendInterface().setGroupExpanded( grpProjekt, True )  
        
         #msgbox ("Bearbeite '" + AktDXFDatNam + "'")
-        Antw = EineDXF (uiParent,grpProjekt,AktList, Kern, AktOpt, AktDXFDatNam,shpPfad, qPrjDatName, sCharSet, bLayer, bFormatText, bUseColor4Point,bUseColor4Line,bUseColor4Poly, dblFaktor)
+
+        if chkTransform and DreiPassPunkte == None:
+            # Einpassdaten müssen aus wld kommen
+            wldDat=os.path.splitext(AktDXFDatNam)[0] + ".wld"
+            if os.path.exists(wldDat):
+                p=[[],[],[]]
+                p[0], p[1], Fehler = ReadWldDat(wldDat)
+                if Fehler == None:
+                    # restliche Punkte per Helmert ermitteln
+                    if p[1] == None:
+                        # 2. Punkt ermitteln
+                        p[0], p[1], p[2] = Helmert4Points(p[0], None)
+                    # (immer) 3. Punkt ermitteln
+                    p[0], p[1], p[2] = Helmert4Points(p[0],p[1])
+                    DreiPassPunkte = p
+                else:
+                    addFehler (wldDat + ": " + Fehler)
+            else:
+                addHinweis(wldDat + ": " + tr("file not found"))
+            
+
+        Antw = EineDXF (uiParent,grpProjekt,AktList, Kern, AktOpt, AktDXFDatNam,shpPfad, qPrjDatName, sCharSet, bLayer, bFormatText, bUseColor4Point,bUseColor4Line,bUseColor4Poly, dblFaktor, chkTransform, DreiPassPunkte)
 
     if len(getFehler()) > 0:
         errbox("\n\n".join(getFehler()))
@@ -371,7 +394,7 @@ def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet,  bCol,bLayer,
     
     uiParent.FormRunning(False)
         
-def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjDatName, sCharSet, bLayer, bFormatText, bUseColor4Point,bUseColor4Line,bUseColor4Poly, dblFaktor):
+def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjDatName, sCharSet, bLayer, bFormatText, bUseColor4Point,bUseColor4Line,bUseColor4Poly, dblFaktor,chkTransform, DreiPassPunkte):
     """
     mLay=QgsVectorLayer('LineString', 'EPSG Code eingeben' , 'memory')
     memDat=EZUTempDir() + str(uuid.uuid4()) + '.shp'
@@ -407,7 +430,12 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
     copyfile(DXFDatNam, korrDXFDatNam)
     #printlog ("Copy" + DXFDatNam + ' --> ' + korrDXFDatNam)
     
-
+    optGCP = ""
+    if chkTransform:
+        for p in range(len(DreiPassPunkte)):
+            optGCP = optGCP + " -gcp "
+            for k in range(len(DreiPassPunkte[p])):
+                optGCP = optGCP + str(DreiPassPunkte[p][k][0]) + " " +  str(DreiPassPunkte[p][k][1]) + " "
     zE=0
     uiParent.SetAktionGesSchritte(len(AktList))
     for p in AktList:
@@ -417,7 +445,8 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
         uiParent.SetAktionAktSchritt(zE)
         shpdat=shpPfad+Kern+v[0]+'.shp'
         qmldat=shpPfad+Kern+v[0]+'.qml'
-        opt=  ('-skipfailure %s -nlt %s -sql "select *, ogr_style from entities where OGR_GEOMETRY %s"') % (AktOpt,v[1],v[2])
+
+        opt=  ('-skipfailure %s -nlt %s %s -sql "select *, ogr_style from entities where OGR_GEOMETRY %s"') % (AktOpt,v[1],optGCP,v[2])
         #opt=  ('-skipfailure %s -nlt %s -where "OGR_GEOMETRY %s"') % (AktOpt,v[1],v[2])
         
         # ----------------------------------------------------------------------------
