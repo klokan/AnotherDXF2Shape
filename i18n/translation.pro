@@ -5,6 +5,7 @@ SOURCES = ../__init__.py \
  ../clsDBase.py \
  ../clsDXFTools.py \
  ../fnc4all.py \
+ ../fnc4ADXF2Shape.py \
  ../TransformTools.py \
  ../uiAbout.py \
  ../uiADXF2Shape.py
