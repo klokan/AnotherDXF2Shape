@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file contains metadata for your plugin. Since 
 # version 2.0 of QGIS this is the proper way to supply 
 # information about a plugin. The old method of 
@@ -9,16 +10,21 @@
 [general]
 name=Another DXF Importer / DXF2Shape Converter
 qgisMinimumVersion=2.8
+qgisMaximumVersion=3.99
 description=Add DXF to QGIS , optional georeferencing, optional convert DXF to Shape
-version=0.90
-changelog=21.09.17 V0.90
+version=1.01
+changelog=20.02.18 V1.01
+    - support qt4 and qt5
+    
+    21.09.17 V0.90
     - support (ESRI) World files for CAD datasets
     - support georeferencing 
         12.04.17 V0.81.2
           - Adjustment for: \fMS Shell Dlg 2|i0|b0;\H1.98441;265.0m
         04.04.17 V0.81.1
 	- error processing.runalg fixed (some installation > 2.8.1
-	13.03.17 V0.81
+	
+    13.03.17 V0.81
         - Error fixed at startup with qgis 2.8
         - use also textformat %%U 
         

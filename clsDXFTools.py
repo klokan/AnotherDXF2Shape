@@ -2,6 +2,7 @@
 """
 /***************************************************************************
  clsDXFTools
+    Stand 10.11.2017: Einheitliche Grundlage QT4/QT5
     Änderungen V0.9:
         Georeferenzieruzngsmodul
     Änderungen V0.81.2:
@@ -66,21 +67,39 @@
 
 from random import randrange
 from shutil import copyfile
-import sys
-from PyQt4.QtGui import *
-from qgis.core import *
-
-from qgis.utils import *
-from fnc4all import *
-
 import uuid
-from PyQt4.QtCore import Qt
-from PyQt4 import QtGui, uic
-from PyQt4.QtSql import QSqlDatabase, QSqlQuery, QSqlError
+import sys
+import os
 from glob import glob
 from shutil import copyfile, move
-from clsDBase import DBFedit
-from TransformTools import ReadWldDat,Helmert4Points
+
+from qgis.core import *
+from qgis.utils import *
+
+try:
+    from PyQt5.QtGui import *
+    from PyQt5.QtWidgets import QMessageBox
+    from PyQt5.QtCore import Qt
+    from PyQt5 import QtGui, uic
+    from PyQt5.QtSql import QSqlDatabase, QSqlQuery, QSqlError
+    myqtVersion = 5
+except:
+    from PyQt4.QtGui import *
+    from PyQt4.QtCore import Qt
+    from PyQt4 import QtGui, uic
+    from PyQt4.QtSql import QSqlDatabase, QSqlQuery, QSqlError
+    myqtVersion = 5
+
+
+try:
+    from .fnc4all  import *
+    from .clsDBase import DBFedit
+    from .TransformTools import ReadWldDat,Helmert4Points
+except:
+    from fnc4all  import *
+    from clsDBase import DBFedit
+    from TransformTools import ReadWldDat,Helmert4Points
+    
 """
 # 23.02.17
 # Processing erst in den Funktionen selbst laden, um den Start von QGIS zu beschleunigen
@@ -119,12 +138,12 @@ def addCSVLayer(csvDatNam):
 
 def labelingDXF (qLayer, bFormatText, bUseColor4Point, dblFaktor):       
     # Textdarstellung über Punktlabel
-    QgsPalLayerSettings().writeToLayer( qLayer )
+    #if myqtVersion == 4:
+    #    QgsPalLayerSettings().writeToLayer( qLayer )
+    # alternative für 5 noch unbekannt
     qLayer.setCustomProperty("labeling","pal")
     qLayer.setCustomProperty("labeling/displayAll","true")
     qLayer.setCustomProperty("labeling/enabled","true")
-    
-    
     if bFormatText:
         # Einstellungen aus Textformatcode
         qLayer.setCustomProperty("labeling/fieldName","plaintext")
@@ -145,11 +164,11 @@ def labelingDXF (qLayer, bFormatText, bUseColor4Point, dblFaktor):
     qLayer.setCustomProperty("labeling/dataDefined/Size",sf) 
 
     qLayer.setCustomProperty("labeling/dataDefined/Family","1~~1~~\"font\"~~")   
-    qLayer.setCustomProperty("labeling/fontSizeInMapUnits","True")        
+    qLayer.setCustomProperty("labeling/fontSizeInMapUnits","True")
+    if myqtVersion == 5:
+        qLayer.setCustomProperty("labeling/fontSizeUnit","MapUnit") # neu in QGIS 3.0  
     qLayer.setCustomProperty("labeling/dataDefined/Rotation","1~~1~~\"angle\"~~")
     qLayer.setCustomProperty("labeling/dataDefined/OffsetQuad", "1~~1~~\"anchor\"~~")
-    
-      
 
     # allgemeine Standardeinstellungen    
     qLayer.setCustomProperty("labeling/obstacle","false")
@@ -158,12 +177,18 @@ def labelingDXF (qLayer, bFormatText, bUseColor4Point, dblFaktor):
 
     qLayer.setCustomProperty("labeling/textTransp","0")
     qLayer.setCustomProperty("labeling/upsidedownLabels","2")
-
+    if myqtVersion == 5:
+        qLayer.removeCustomProperty("labeling/ddProperties")
 
 def kat4Layer(layer, bUseColor4Line,bUseColor4Poly):
     # get unique values 
-    fni = layer.fieldNameIndex('Layer')
-    unique_values = layer.dataProvider().uniqueValues(fni)
+    if myqtVersion == 4:
+        fni = layer.fieldNameIndex('Layer')
+        unique_values = layer.dataProvider().uniqueValues(fni)
+    else:
+        fni = layer.dataProvider().fieldNameIndex('Layer')
+        unique_values = layer.dataProvider().uniqueValues(fni)
+    
     symbol_layer = None
     # define categories
     categories = []
@@ -171,8 +196,10 @@ def kat4Layer(layer, bUseColor4Line,bUseColor4Poly):
         if AktLayerNam == NULL:
             AktLayerNam = "Null"
         # initialize the default symbol for this geometry type
-        symbol = QgsSymbolV2.defaultSymbol(layer.geometryType())
-
+        if myqtVersion == 4:
+            symbol = QgsSymbolV2.defaultSymbol(layer.geometryType())
+        else:
+            symbol = QgsSymbol.defaultSymbol(layer.geometryType())
         # configure a symbol layer
         layer_style = {}
         if layer.geometryType() == 1 and bUseColor4Line:
@@ -180,16 +207,25 @@ def kat4Layer(layer, bUseColor4Line,bUseColor4Poly):
             layer_style["color_dd_expression"]="\"color\""
             layer_style["color_dd_field"]="color"
             layer_style["color_dd_useexpr"]="0"
-            symbol_layer = QgsSimpleLineSymbolLayerV2.create(layer_style)
+            if myqtVersion == 4:
+                symbol_layer = QgsSimpleLineSymbolLayerV2.create(layer_style)
+            else:
+                symbol_layer = QgsSimpleLineSymbolLayer.create(layer_style)
         if layer.geometryType() == 2 and bUseColor4Poly:
             layer_style["color_dd_active"]="1"
             layer_style["color_dd_expression"]="\"fcolor\""
             layer_style["color_dd_field"]="fcolor"
             layer_style["color_dd_useexpr"]="0"
             layer_style['outline'] = '1, 234, 3'
-            symbol_layer = QgsSimpleFillSymbolLayerV2.create(layer_style)
-
-        layer.setLayerTransparency(50)
+            if myqtVersion == 4:
+                symbol_layer = QgsSimpleFillSymbolLayerV2.create(layer_style)
+            else:
+                symbol_layer = QgsSimpleFillSymbolLayer.create(layer_style)
+        
+        if myqtVersion == 4:
+            layer.setLayerTransparency(50)
+        else:
+            layer.setOpacity(0.5)
 
 		#else:
         #    layer_style['color'] = '%d, %d, %d' % (randrange(0,256), randrange(0,256), randrange(0,256))
@@ -208,13 +244,18 @@ def kat4Layer(layer, bUseColor4Line,bUseColor4Poly):
            symbol.setSize( 0.1 )
 
         # create renderer object
-        category = QgsRendererCategoryV2(AktLayerNam, symbol, AktLayerNam)
+        if myqtVersion == 4:
+            category = QgsRendererCategoryV2(AktLayerNam, symbol, AktLayerNam)
+        else:
+            category = QgsRendererCategory(AktLayerNam, symbol, AktLayerNam)
         # entry for the list of category items
         categories.append(category)
 
     # create renderer object
-    renderer = QgsCategorizedSymbolRendererV2('Layer', categories)
-
+    if myqtVersion == 4:
+        renderer = QgsCategorizedSymbolRendererV2('Layer', categories)
+    else:
+        renderer = QgsCategorizedSymbolRenderer('Layer', categories)
     # assign the created renderer to the layer
     return renderer
 
@@ -225,7 +266,7 @@ def DelShapeDatBlock (shpDat):
         for rest in glob(shpDat[0:-4] + '.*'):
             os.remove(rest)
         return True
-    except OSError, e:  ## if failed, report it back to the user ##
+    except (OSError, e):  ## if failed, report it back to the user ##
         QMessageBox.critical(None, tr("DSDB:file remove error"),"Error: %s - %s." % (e.filename,e.strerror)) 
         return None
     
@@ -234,7 +275,7 @@ def DelZielDateien (delShp):
     if len(delShp) > 0:
         s=("\n".join(delShp))
         antw=QMessageBox.question(None, tr("Overwriting the following files"), s, QMessageBox.Yes, QMessageBox.Cancel)
-        if antw <> QtGui.QMessageBox.Yes:
+        if antw != QtGui.QMessageBox.Yes:
             return None
         else:
             for shp in delShp:
@@ -243,7 +284,7 @@ def DelZielDateien (delShp):
                     os.remove(shp)
                     for rest in glob(shp[0:-4] + '.*'):
                         os.remove(rest)
-                except OSError, e:  ## if failed, report it back to the user ##
+                except (OSError, e):  ## if failed, report it back to the user ##
                     QMessageBox.critical(None, tr("DZD:file remove error"),"Error: %s - %s." % (e.filename,e.strerror)) 
                     return None
     return True
@@ -294,9 +335,9 @@ def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet,  bCol,bLayer,
     from processing.core.Processing import Processing
     
     # -----------------------------------------------------------------------------------------------    
-    # 1. Löschen der alten Projekte und evtl. Ermittlung der zu überschreibenden Dateien
+    # 1. Löschen der alten Projekte und evtl.if myqtVersion == 4 Ermittlung der zu überschreibenden Dateien
     delShp=[]
-    for i in xrange(listDXFDatNam.count()):
+    for i in range(listDXFDatNam.count()):
         AktDXFDatNam=listDXFDatNam.item(i).text()
         AktList,AktOpt,ProjektName, Kern =ProjDaten4Dat(AktDXFDatNam,bCol,bLayer, bSHPSave)
         
@@ -320,70 +361,97 @@ def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet,  bCol,bLayer,
         return None
     
     # -----------------------------------------------------------------------------------------------    
-    # 2. Dialog zur CRS-Eingabe aufrufen und Dummylayer schreiben, um eine qprj zu erhalten
-    # Vorteil der qprj: auch UserCRS werden erkannt
-    mLay=QgsVectorLayer('LineString','' , 'memory')
+    # 2. evtl. Dialog zur CRS-Eingabe aufrufen und Dummylayer schreiben, um eine qprj zu erhalten
+    #    Vorteil der qprj: auch UserCRS werden erkannt
+    # a) CRS manuell oder automatisch je nach Einstellung
+    # es gibt 3 Arten: prompt,useProject,useGlobal 
+    mLay=QgsVectorLayer('LineString','' , 'memory') 
     memDat=EZUTempDir() + str(uuid.uuid4()) + '.shp'
     Antw=QgsVectorFileWriter.writeAsVectorFormat(mLay,memDat,  None, mLay.crs(), "ESRI Shapefile")
     qPrjDatName=memDat[0:-3] + 'qpj'
 
-
+    # es gibt 3 Arten: prompt,useProject,useGlobal 
+    # originale Einstellung merken und für den weiter Verlauf zwingend auf automatisch einstellen 
+    # Name der Eigenschaft in 3.0 geändert/korrigiert
+    if myqtVersion == 4:
+        crsRegParam4NewLayer='/Projections/defaultBehaviour'
+    else:
+        crsRegParam4NewLayer='/Projections/defaultBehavior'
+        
+    crsArt = QSettings().value(crsRegParam4NewLayer)
+    crsDefWert = QSettings().value('/Projections/layerDefaultCrs')
     
-    # -----------------------------------------------------------------------------------------------   
-    # 3a. Initialisierung    
-    # manchmal bleibt (bei mehrfachnutzung oder bei crash) irgend etwas hängen,
-    # die beiden nachfolgenden Zeilen haben bei einem Test das Problem gefixt - konnte aber noch nicht wiederholt werden
-    # recht zeitaufwändig
-    uiParent.FormRunning(True)
-    uiParent.SetDatAktionGesSchritte(8)    
-    uiParent.SetAktionText("")
-    uiParent.SetDatAktionText(tr("process init - please wait"))
-    uiParent.SetDatAktionAktSchritt(1)
+    QSettings().setValue('/Projections/layerDefaultCrs',mLay.crs().authid())  
+    QSettings().setValue(crsRegParam4NewLayer,'useGlobal')
 
-    Processing.initialize()
-    Processing.updateAlgsList()
+    #try:
+    if True:
+        # -----------------------------------------------------------------------------------------------   
+        # 3a. Initialisierung    
+        # manchmal bleibt (bei mehrfachnutzung oder bei crash) irgend etwas hängen,
+        # die beiden nachfolgenden Zeilen haben bei einem Test das Problem gefixt - konnte aber noch nicht wiederholt werden
+        # recht zeitaufwändig
+        uiParent.FormRunning(True)
+        uiParent.SetDatAktionGesSchritte(8)    
+        uiParent.SetAktionText("")
+        uiParent.SetDatAktionText(tr("process init - please wait"))
+        uiParent.SetDatAktionAktSchritt(1)
 
-    # -----------------------------------------------------------------------------------------------    
-    # 3. Abarbeitung der Dateien
-    uiParent.SetDatAktionGesSchritte(listDXFDatNam.count())
-    for i in xrange(listDXFDatNam.count()):
-        AktDXFDatNam=listDXFDatNam.item(i).text() 
-        uiParent.SetDatAktionText(tr("Import: " + AktDXFDatNam.encode("utf8") ))
-        uiParent.SetDatAktionAktSchritt(i+1)
-        
-        AktList,AktOpt,ProjektName, Kern = ProjDaten4Dat(AktDXFDatNam,bCol,bLayer, bSHPSave)
+        Processing.initialize()
+        #Processing.updateAlgsList() # existiert nicht mehr bei 2.99
 
-        
-        iface.mapCanvas().setRenderFlag( False )    
-        # 1. Wurzel mit DXF- bzw. Projektname
-              
-        # Projektname (-gruppe) in Root (neu) erstellen
-        grpProjekt = iface.legendInterface().addGroup( ProjektName, False)
-        iface.legendInterface().setGroupExpanded( grpProjekt, True )  
-       
-        #msgbox ("Bearbeite '" + AktDXFDatNam + "'")
-
-        if chkTransform and DreiPassPunkte == None:
-            # Einpassdaten müssen aus wld kommen
-            wldDat=os.path.splitext(AktDXFDatNam)[0] + ".wld"
-            if os.path.exists(wldDat):
-                p=[[],[],[]]
-                p[0], p[1], Fehler = ReadWldDat(wldDat)
-                if Fehler == None:
-                    # restliche Punkte per Helmert ermitteln
-                    if p[1] == None:
-                        # 2. Punkt ermitteln
-                        p[0], p[1], p[2] = Helmert4Points(p[0], None)
-                    # (immer) 3. Punkt ermitteln
-                    p[0], p[1], p[2] = Helmert4Points(p[0],p[1])
-                    DreiPassPunkte = p
-                else:
-                    addFehler (wldDat + ": " + Fehler)
+        # -----------------------------------------------------------------------------------------------    
+        # 3. Abarbeitung der Dateien
+        uiParent.SetDatAktionGesSchritte(listDXFDatNam.count())
+        for i in range(listDXFDatNam.count()):
+            AktDXFDatNam=listDXFDatNam.item(i).text()
+            if myqtVersion == 5:
+                uiParent.SetDatAktionText(tr("Import: " + AktDXFDatNam ))
             else:
-                addHinweis(wldDat + ": " + tr("file not found"))
+                uiParent.SetDatAktionText(tr("Import: " + AktDXFDatNam.encode("utf8") ))
+            uiParent.SetDatAktionAktSchritt(i+1)
             
+            AktList,AktOpt,ProjektName, Kern = ProjDaten4Dat(AktDXFDatNam,bCol,bLayer, bSHPSave)
 
-        Antw = EineDXF (uiParent,grpProjekt,AktList, Kern, AktOpt, AktDXFDatNam,shpPfad, qPrjDatName, sCharSet, bLayer, bFormatText, bUseColor4Point,bUseColor4Line,bUseColor4Poly, dblFaktor, chkTransform, DreiPassPunkte)
+            
+            iface.mapCanvas().setRenderFlag( False )    
+            # 1. Wurzel mit DXF- bzw. Projektname
+                  
+            # Projektname (-gruppe) in Root (neu) erstellen
+            root = QgsProject.instance().layerTreeRoot()
+            grpProjekt = root.addGroup( ProjektName)
+            #grpProjekt = iface.legendInterface().addGroup( ProjektName, False)
+            grpProjekt.setExpanded(True)
+            #iface.legendInterface().setGroupExpanded( grpProjekt, True )  
+           
+            #msgbox ("Bearbeite '" + AktDXFDatNam + "'")
+            okTransform=chkTransform
+            if chkTransform and DreiPassPunkte == None:
+                # Einpassdaten müssen aus wld kommen
+                wldDat=os.path.splitext(AktDXFDatNam)[0] + ".wld"
+                if os.path.exists(wldDat):
+                    p=[[],[],[]]
+                    p[0], p[1], Fehler = ReadWldDat(wldDat)
+                    if Fehler == None:
+                        # restliche Punkte per Helmert ermitteln
+                        if p[1] == None:
+                            # 2. Punkt ermitteln
+                            p[0], p[1], p[2] = Helmert4Points(p[0], None)
+                        # (immer) 3. Punkt ermitteln
+                        p[0], p[1], p[2] = Helmert4Points(p[0],p[1])
+                        DreiPassPunkte = p
+                    else:
+                        okTransform=False
+                        addFehler (wldDat + ": " + Fehler)
+                else:
+                    okTransform=False
+                    addFehler(wldDat + ": " + tr("file not found"))
+                
+
+            Antw = EineDXF (uiParent,grpProjekt,AktList, Kern, AktOpt, AktDXFDatNam,shpPfad, qPrjDatName, sCharSet, bLayer, bFormatText, bUseColor4Point,bUseColor4Line,bUseColor4Poly, dblFaktor, okTransform, DreiPassPunkte)
+    # Ausgangswerte wieder herstellen
+    QSettings().setValue(crsRegParam4NewLayer,crsArt)
+    QSettings().setValue('/Projections/layerDefaultCrs',crsDefWert)
 
     if len(getFehler()) > 0:
         errbox("\n\n".join(getFehler()))
@@ -395,19 +463,12 @@ def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet,  bCol,bLayer,
     uiParent.FormRunning(False)
         
 def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjDatName, sCharSet, bLayer, bFormatText, bUseColor4Point,bUseColor4Line,bUseColor4Poly, dblFaktor,chkTransform, DreiPassPunkte):
-    """
-    mLay=QgsVectorLayer('LineString', 'EPSG Code eingeben' , 'memory')
-    memDat=EZUTempDir() + str(uuid.uuid4()) + '.shp'
-    Antw=QgsVectorFileWriter.writeAsVectorFormat(mLay,memDat,  None, mLay.crs(), "ESRI Shapefile")
-    qPrjDatName=memDat[0:-3] + 'qpj'
-    """
     # 23.02.17
     # Processing erst hier Laden, um den Start von QGIS zu beschleunigen
     import processing
     from processing.core.Processing import Processing
     
-    resetFehler()
-    resetHinweis()
+
     myGroups={}
     
     # ----------------------------------------------------------------------------
@@ -441,7 +502,10 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
     for p in AktList:
         zE=zE+1       
         v = p.split(":")
-        uiParent.SetAktionText(tr("Edit Entity: " + Kern.encode("utf8")+v[0] ))
+        if myqtVersion == 5:
+            uiParent.SetAktionText(tr("Edit Entity: " + Kern+v[0] ))
+        else:
+            uiParent.SetAktionText(tr("Edit Entity: " + Kern.encode("utf8")+v[0] ))
         uiParent.SetAktionAktSchritt(zE)
         shpdat=shpPfad+Kern+v[0]+'.shp'
         qmldat=shpPfad+Kern+v[0]+'.qml'
@@ -458,15 +522,22 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
         #    korrSHPDatNam=shpdat
         #else:
         korrSHPDatNam=(EZUTempDir() + str(uuid.uuid4()) + '.shp')           
+        hinweislog ('convertformat'+','+korrDXFDatNam +','+ '0'+','+ opt +','+ '"' + korrSHPDatNam + '"')
+        if myqtVersion == 4:
+            pAntw=processing.runalg('gdalogr:convertformat',korrDXFDatNam , 0, opt , korrSHPDatNam)
+        else:
+            # Funktioniert zumindest mit Februarversion 2017 (1282816)
+            # pAntw=processing.runalg('gdal:convertformat',korrDXFDatNam, 0, opt , korrSHPDatNam)
+            pList={'INPUT':korrDXFDatNam,'OPTIONS':opt,'OUTPUT': korrSHPDatNam}
+            pAntw=processing.run('gdal:convertformat',pList) 
 
-        hinweislog ('gdalogr:convertformat'+','+korrDXFDatNam +','+ '0'+','+ opt +','+ '"' + korrSHPDatNam + '"')
 
-        if processing.runalg('gdalogr:convertformat',korrDXFDatNam , 0, opt , korrSHPDatNam) is None:
+        if pAntw is None:
             addFehler(tr("process 'gdalogr:convertformat' could not start please restart QGIS"))
         else:
             if os.path.exists(korrSHPDatNam):
                 DBFedit(korrSHPDatNam,bFormatText,sCharSet)
-                if korrSHPDatNam <> shpdat:
+                if korrSHPDatNam != shpdat:
                     # evtl. korrigierte Dateiname umbenennen
                     #printlog ("move:" + korrSHPDatNam + '-->' + shpdat)
                     move(korrSHPDatNam,shpdat)
@@ -478,8 +549,8 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
                 # zu anderenen EPSG-Codes -> Nutzung einer qpj
                 #print qPrjDatName,shpdat[0:-3]+"qpj"
                 copyfile (qPrjDatName,shpdat[0:-3]+"qpj")
-     
                 Layer = QgsVectorLayer(shpdat, "entities"+v[0],"ogr") 
+             
                 # vermutlich reicht einer der beiden Befehle
                 # unbekannte Codepages werden zu "System"
                 Layer.setProviderEncoding(sCharSet)
@@ -496,21 +567,39 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
                             bLayerMitDaten  = True
                     else:
                         addHinweis("No entities for " + opt )
-                        
+                    
+                    # der Layer enthält Daten
                     if bLayerMitDaten:
                         if not bLayer:
-                            QgsMapLayerRegistry.instance().addMapLayer(Layer)
-                            iface.legendInterface().moveLayer( Layer, grpProjekt)
+                            # Group by Layer ist deaktiviert, für jede Geometrieart wird nur ein Layer geschrieben
+                            #   17.01.18: funktioniert bei 2.18 und 2.99
+                            # 28.03.17 Diese Zeile ist notwendig, damit das "processing.runalg" sauber läuft !!???
+                            if myqtVersion == 4:
+                                QgsMapLayerRegistry.instance().addMapLayer(Layer, False)
+                            else:
+                                Layer = QgsProject.instance().addMapLayer(Layer, False) # nicht in Legende
+
+                            ml=grpProjekt.addLayer(Layer)
+                            ml.setExpanded(False)
+                            #QgsMapLayerRegistry.instance().addMapLayer(Layer)
+                            #iface.legendInterface().moveLayer( Layer, grpProjekt)
                             Rend=kat4Layer(Layer, bUseColor4Line, bUseColor4Poly)
                             if Rend is not None:
-                                Layer.setRendererV2(Rend)
+                                if myqtVersion == 4:
+                                    Layer.setRendererV2(Rend)
+                                else:
+                                    Layer.setRenderer(Rend)
                             else:
                                 addFehler ("Categorization for  " + opt + " could not be executed")
                             if Layer.geometryType() == 0:
                                 labelingDXF (Layer,bFormatText, bUseColor4Point, dblFaktor)                               
-                            
+
                         else:
-                            fni = Layer.fieldNameIndex('Layer')
+                            # Group by Layer ist aktiviert, für jeden Layer wird eine extra Gruppe erzeugt
+                            if myqtVersion == 4:
+                                fni = Layer.fieldNameIndex('Layer')
+                            else:
+                                fni = Layer.dataProvider().fieldNameIndex('Layer')
                             unique_values = Layer.dataProvider().uniqueValues(fni)
                             zL=0
                             for AktLayerNam in unique_values:
@@ -527,28 +616,47 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
                                 Layer.dataProvider().setEncoding(sCharSet)   
                                 Layer.setSubsetString( "Layer = '" + AktLayerNam + "'" )
 
-                                QgsMapLayerRegistry.instance().addMapLayer(Layer)
+                                if myqtVersion == 4:
+                                    QgsMapLayerRegistry.instance().addMapLayer(Layer, False)
+                                else:
+                                    Layer = QgsProject.instance().addMapLayer(Layer, False) # nicht in Legende
                                 #print 'Layer = "' + AktLayerNam + '"'
                                 #iface.mapCanvas().setRenderFlag( True )
-                                #return
                                 if AktLayerNam not in myGroups:
-                                    gL = iface.legendInterface().addGroup( AktLayerNam, False,grpProjekt)
+                                    #gL = iface.legendInterface().addGroup( AktLayerNam, False,grpProjekt)
+                                    gL = grpProjekt.addGroup( AktLayerNam)
                                     myGroups[AktLayerNam]=gL
                                     #print myGroups
-                                    iface.legendInterface().setGroupExpanded( gL, False )
-                                    iface.legendInterface().moveLayer( Layer, gL)
+                                    #iface.legendInterface().setGroupExpanded( gL, False )
+                                    #iface.legendInterface().moveLayer( Layer, gL)
+                                    gL.addLayer(Layer)
+                                    gL.setExpanded(False)
+
                                 else:
-                                    iface.legendInterface().moveLayer( Layer, myGroups[AktLayerNam])
+                                    #iface.legendInterface().moveLayer( Layer, myGroups[AktLayerNam])
+                                    myGroups[AktLayerNam].addLayer(Layer)
                                     
                                 if Layer.geometryType() == 0:
-                                    symbol = QgsSymbolV2.defaultSymbol(Layer.geometryType())
+                                    if myqtVersion == 4:
+                                        symbol = QgsSymbolV2.defaultSymbol(Layer.geometryType())
+                                        Layer.setRendererV2(QgsSingleSymbolRendererV2( symbol ) )  
+                                    else:
+                                        symbol = QgsSymbol.defaultSymbol(Layer.geometryType())
+                                        Layer.setRenderer(QgsSingleSymbolRenderer( symbol ) )
+                                                                            
                                     symbol.setSize( 0.1 )
-                                    Layer.setRendererV2(QgsSingleSymbolRendererV2( symbol ) )                   
                                     labelingDXF (Layer, bFormatText, bUseColor4Point, dblFaktor)
                                 if Layer.geometryType() == 1 and bUseColor4Line:
-                                    lineMeta = QgsSymbolLayerV2Registry.instance().symbolLayerMetadata("SimpleLine")
-                                    symbol = QgsSymbolV2.defaultSymbol(Layer.geometryType())
-                                    renderer = QgsRuleBasedRendererV2(symbol)
+                                    if myqtVersion == 4:
+                                        lineMeta = QgsSymbolLayerV2Registry.instance().symbolLayerMetadata("SimpleLine")
+                                        symbol = QgsSymbolV2.defaultSymbol(Layer.geometryType())
+                                        renderer = QgsRuleBasedRendererV2(symbol)
+                                    else:
+                                        registry = QgsSymbolLayerRegistry()
+                                        lineMeta = registry.symbolLayerMetadata("SimpleLine")
+                                        symbol = QgsSymbol.defaultSymbol(Layer.geometryType())
+                                        renderer = QgsRuleBasedRenderer(symbol)
+                                        
                                     root_rule = renderer.rootRule()
                                     rule = root_rule.children()[0].clone()
                                     symbol.deleteSymbolLayer(0)
@@ -561,11 +669,20 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
                                     symbol.appendSymbolLayer(lineLayer)
                                     rule.setSymbol(symbol)
                                     rule.appendChild(rule) 
-                                    Layer.setRendererV2(renderer) 
+                                    if myqtVersion == 4:
+                                        Layer.setRendererV2(renderer) 
+                                    else:
+                                        Layer.setRenderer(renderer)
                                 if Layer.geometryType() == 2 and bUseColor4Poly:
-                                    fillMeta = QgsSymbolLayerV2Registry.instance().symbolLayerMetadata("SimpleFill")
-                                    symbol = QgsSymbolV2.defaultSymbol(Layer.geometryType())
-                                    renderer = QgsRuleBasedRendererV2(symbol)
+                                    if myqtVersion == 4:
+                                        fillMeta = QgsSymbolLayerV2Registry.instance().symbolLayerMetadata("SimpleFill")
+                                        symbol = QgsSymbolV2.defaultSymbol(Layer.geometryType())
+                                        renderer = QgsRuleBasedRendererV2(symbol)
+                                    else:
+                                        registry = QgsSymbolLayerRegistry()
+                                        fillMeta = registry.symbolLayerMetadata("SimpleFill")
+                                        symbol = QgsSymbol.defaultSymbol(Layer.geometryType())
+                                        renderer = QgsRuleBasedRenderer(symbol)
                                     root_rule = renderer.rootRule()
                                     rule = root_rule.children()[0].clone()
                                     symbol.deleteSymbolLayer(0)
@@ -578,15 +695,20 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
                                     symbol.appendSymbolLayer(lineLayer)
                                     rule.setSymbol(symbol)
                                     rule.appendChild(rule) 
-                                    Layer.setRendererV2(renderer)                                         
-                                    Layer.setLayerTransparency(50)
+                                    if myqtVersion == 4:
+                                        Layer.setRendererV2(renderer)
+                                        Layer.setLayerTransparency(50)                                        
+                                    else:
+                                        Layer.setRenderer(renderer)
+                                        Layer.setOpacity(0.5)
+
                         Layer.saveNamedStyle (qmldat)
                     else:
                         Layer=None # um Datei löschen zu ermöglichen
                         if not DelShapeDatBlock(shpdat):
                             DelShapeDatBlock(shpdat)
                 else:
-                    addFehler (tr("Option '%s' could not be executed")%  opt )
+                    addHinweis (tr("Option '%s' could not be executed")%  opt )
             else:  
                 addFehler(tr("Creation '%s' failed. Please look to the QGIS log message panel (OGR)") % shpdat )
 
@@ -607,5 +729,15 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
     return lList
         """
 if __name__ == "__main__":
-    dummy=0
+    pass
+        
+        
+"""    print ("Start: -------------------------------------")
+    datNam="x:/dxf2shape/karte2.dxf"
+    opt='-sql "select *, ogr_style from entities where OGR_GEOMETRY LIKE ''%POINT%'''
+    list={'INPUT':datNam,'OPTIONS':opt,'OUTPUT': datNam}
+    print (list)
+    print ("Ende: -------------------------------------")
+    
     #KorrPrjDat ("d:/tar/x.dxf(GC)L.prj")
+"""

@@ -20,7 +20,11 @@
  *                                                                         *
  ***************************************************************************/
 """
-from fnc4all import *
+try:
+    from .fnc4all import *
+except:
+    from fnc4all  import *
+    
 from copy import deepcopy
 import math
 

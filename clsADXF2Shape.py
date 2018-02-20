@@ -20,17 +20,42 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
-from PyQt4.QtGui import QAction, QIcon
-import resources
+
 import webbrowser
-from uiADXF2Shape import uiADXF2Shape
-import os.path
+from  os import getenv, path
+import getpass
 
-import clsDXFTools
-from uiAbout import uiAbout
-from fnc4all import *
+try:
+    from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
+    from PyQt5.QtWidgets import QApplication, QAction,QMessageBox
+    myqtVersion = 5
 
+except:
+    from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
+    from PyQt4.QtGui import QAction, QIcon
+    myqtVersion = 4
+
+
+try:
+    if myqtVersion == 4:
+        from .resourcesqt4 import *
+    else:
+        from .resources import *
+
+    from .uiAbout      import *
+    from .clsDXFTools  import *
+    from .uiADXF2Shape import *
+    from .fnc4all      import *
+except:
+    if myqtVersion == 4:
+        from resourcesqt4 import *
+    else:
+        from resources import *
+
+    from uiAbout      import *
+    from clsDXFTools  import *
+    from uiADXF2Shape import *
+    from fnc4all      import *
 
 class clsADXF2Shape:
     """QGIS Plugin Implementation."""
@@ -54,7 +79,8 @@ class clsADXF2Shape:
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
         locale = QSettings().value('locale/userLocale')
-        if locale is None:
+        # 15.01.18: unbesetzt ist jeutzt plötzlich NULL !?
+        if locale is None or locale == NULL:
             locale = 'en'
         else:
             locale= QSettings().value('locale/userLocale')[0:2]

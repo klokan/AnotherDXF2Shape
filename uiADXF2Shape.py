@@ -2,6 +2,7 @@
 """
 /***************************************************************************
  uiADXF2Shape
+    Stand 10.11.2017: Einheitliche Grundlage QT4/QT5
     Änderungen V0.9:
         Georeferenzieruzngsmodul
     Änderungen V0.6:
@@ -37,17 +38,37 @@
  *                                                                         *
  ***************************************************************************/
 """
+try:
+    from PyQt5 import QtCore, QtGui, QtWidgets
+    from qgis.utils import os, sys
+    from PyQt5 import QtGui, uic
+    from PyQt5.QtWidgets import QApplication,QMessageBox, QDialog, QTableWidgetItem, QDialogButtonBox, QFileDialog
+    from PyQt5.QtCore    import QSize, QSettings, QTranslator, qVersion, QCoreApplication, QObject, QEvent
 
+except:
+    from PyQt4 import QtGui, uic
+    from PyQt4.QtGui import QMessageBox, QDialogButtonBox, QDialog, QTableWidgetItem, QFileDialog
+    from PyQt4.QtCore import QSize, QSettings, QTranslator, qVersion, QCoreApplication, QObject, QEvent
+
+import os
+"""
 from qgis.utils import os, sys
 import os
-from PyQt4.QtCore import QSettings,QSize
-from PyQt4 import QtGui, uic
-from PyQt4.QtGui import QMessageBox, QDialogButtonBox
-from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from fnc4all import *
 from TransformTools import *
 from clsDXFTools import DXFImporter
 import clsADXF2Shape
+"""
+try:
+    from .fnc4all import *
+    from .clsDXFTools import DXFImporter
+    from .TransformTools import ReadWldDat
+except:
+    from fnc4all import *
+    from clsDXFTools import DXFImporter
+    from TransformTools import ReadWldDat
+
+
 
 # Programm funktioniert auch ohne installierte gdal-Bibliothek, die Bibo wird nur zur Anzeige der Version genommen
 try:
@@ -57,7 +78,7 @@ except:
  
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'uiADXF2Shape.ui'))
-from PyQt4.QtCore import QObject, QEvent
+
 
 """
     23.11.16: D&D deaktiviert
@@ -86,7 +107,7 @@ class QLineEditDropHandler(QObject):
         return QObject.eventFilter(self, obj, event)
 """        
 
-class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
+class uiADXF2Shape(QDialog, FORM_CLASS):
     charsetList = ["System",
      "ascii",
      "big5",
@@ -188,7 +209,11 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
-        locale = QSettings().value('locale/userLocale')[0:2]
+        locale= QSettings().value('locale/userLocale')
+        if locale is None or locale == NULL:
+            locale = 'en'
+        else:
+            locale= QSettings().value('locale/userLocale')[0:2]
         locale_path = os.path.join(
             self.plugin_dir,
             'i18n',
@@ -272,10 +297,10 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
     
 
     def TableNone2Empty( self, tw):
-        for row in xrange(tw.rowCount()):
-            for col in xrange(tw.columnCount()):
+        for row in range(tw.rowCount()):
+            for col in range(tw.columnCount()):
                 if tw.item(row,col) == None:
-                    item = QtGui.QTableWidgetItem('')
+                    item = QTableWidgetItem('')
                     tw.setItem(row, col, item)
     
     def FillPoint4Wld (self,wldname):
@@ -526,19 +551,23 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         DXFDatName = QtGui.QFileDialog.getOpenFileName(self, 'Open File', lastDXFDir, 'DXF  (*.dxf)')
         self.txtDXFDatNam.setText(DXFDatName)
         (dxfDir, dxfFile) = os.path.split(DXFDatName)
-        if dxfDir <> "":
+        if dxfDir != "":
             s.setValue("lastDXFDir", dxfDir)
         """
         MerkAnz=self.listDXFDatNam.count()
         Anz=0
-        for DXFDatName in QtGui.QFileDialog.getOpenFileNames(self, 'Open File', lastDXFDir, 'DXF  (*.dxf)'):
+        if myqtVersion == 5:
+            AllDXFDatNames=QFileDialog.getOpenFileNames(self, 'Open File', lastDXFDir, 'DXF  (*.dxf)')[0]
+        else:
+            AllDXFDatNames=QFileDialog.getOpenFileNames(self, 'Open File', lastDXFDir, 'DXF  (*.dxf)')
+        for DXFDatName in AllDXFDatNames:
             DXFDatName=(DXFDatName).replace("\\","/")
             if Anz == 0:
                 # im Gegensatz zu getOpenFileName() gibt getOpenFileNames Backslash's zurück
                 self.listDXFDatNam.clear()
                 self.listDXFDatNam.setEnabled(True)     
                 (dxfDir, dxfFile) = os.path.split(DXFDatName)
-                if dxfDir <> "":
+                if (dxfDir != ""):
                     s.setValue("lastDXFDir", dxfDir) 
                 #für Übergang    
                 #printlog (DXFDatName)
@@ -556,13 +585,18 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         lastSHPDir = s.value("lastSHPDir", ".")
         
         if not os.path.exists(lastSHPDir):
-            lastSHPDir=os.getcwd()    
-        flags = QtGui.QFileDialog.DontResolveSymlinks | QtGui.QFileDialog.ShowDirsOnly
-        shpDirName = QtGui.QFileDialog.getExistingDirectory(self, "Open Directory",lastSHPDir,flags)
+            lastSHPDir=os.getcwd() 
+
+        if myqtVersion == 5:
+            flags = QtWidgets.QFileDialog.DontResolveSymlinks | QtWidgets.QFileDialog.ShowDirsOnly
+            shpDirName = QtWidgets.QFileDialog.getExistingDirectory(self, "Open Directory",lastSHPDir,flags)
+        else:
+            flags = QtGui.QFileDialog.DontResolveSymlinks | QtGui.QFileDialog.ShowDirsOnly
+            shpDirName = QtGui.QFileDialog.getExistingDirectory(self, "Open Directory",lastSHPDir,flags)
         shpDirName=shpDirName.replace("\\","/")
         self.txtZielPfad.setText(shpDirName)
 
-        if shpDirName <> "":
+        if shpDirName != "":
             s.setValue("lastSHPDir", shpDirName)
     
     def OptSpeichern(self):        
@@ -593,7 +627,7 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
 
         # 1. Test ob alle dxf lesbar
         #allDXFDat = self.listDXFDatNam('', Qt.MatchRegExp)
-        for i in xrange(self.listDXFDatNam.count()):
+        for i in range(self.listDXFDatNam.count()):
             AktDat=self.listDXFDatNam.item(i).text()
             if not os.path.exists(AktDat):
                 QMessageBox.critical(None,self.tr(u"DXF-file not found"), AktDat )
@@ -609,7 +643,7 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         if ZielPfad == "":
             QMessageBox.critical(None, self.tr("Destination path not selected"), self.tr("Please specify a target path for shapes")) 
             return
-        if ZielPfad[:-1] <> "/" and ZielPfad[:-1] <> "\\":
+        if ZielPfad[:-1] != "/" and ZielPfad[:-1] != "\\":
                 ZielPfad=ZielPfad + "/"
         if not os.path.exists(ZielPfad):
             QMessageBox.critical(None, self.tr("Destination path not found"), ZielPfad)
@@ -718,12 +752,12 @@ class uiADXF2Shape(QtGui.QDialog, FORM_CLASS):
         s.setValue("SaveWidth", str(self.width()))
         s.setValue("SaveHeight", str(self.height()))
 if __name__ == "__main__":
-    """
+ 
     app = QApplication(sys.argv)
-    from uiADXF2Shape import uiADXF2Shape
-    
-    window = uiADXF2Shape()
-    window.show()
-    sys.exit(app.exec_())
-    """
+    #from uiADXF2Shape import uiADXF2Shape
+    QFileDialog.getOpenFileNames(self, 'Open File', "", 'DXF  (*.dxf)')
+    #window = uiADXF2Shape()
+    #window.show()
+    #sys.exit(app.exec_())
+    #"""
 

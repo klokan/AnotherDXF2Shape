@@ -2,6 +2,10 @@
 """
 /***************************************************************************
  clsDBase
+    Änderungen V0.81.2:
+        18.04.17 
+            - Umsetzung: \fMS Shell Dlg 2|i0|b0;\H1.98441;265.0m
+              \H1.98441 heraus plaintext und "size" setzen
     Änderungen V0.81:
         03.03.17 
             - Untersteichung neben %%u jetzt auch %%U
@@ -33,10 +37,20 @@
 """
 
 from osgeo import ogr
-from PyQt4.QtCore import  QCoreApplication
-from fnc4all import *
+
+try:
+    from PyQt5.QtCore import  QCoreApplication
+except:
+    from PyQt4.QtCore import  QCoreApplication
+
+try:
+    from .fnc4all import *
+except:
+    from fnc4all  import *
+
 import locale
 
+    
 def tr( message):
     """Get the translation for a string using Qt translation API.
 
@@ -137,7 +151,7 @@ def csvSplit(csvZeile, trenn=',', tKenn='"', tKennDel = True):
             sb = False
             
     arr = s.split(trenn)
-    if mask <> "":
+    if mask != "":
         for i in range(0,len(arr)):
             arr[i] = arr[i].replace(mask,trenn)
 
@@ -146,10 +160,11 @@ def csvSplit(csvZeile, trenn=',', tKenn='"', tKennDel = True):
 
 def splitText (fText,TxtType):
     #http://docs.autodesk.com/ACD/2010/ENU/AutoCAD%202010%20User%20Documentation/index.html?url=WS1a9193826455f5ffa23ce210c4a30acaf-63b9.htm,topicNumber=d0e123454
-    # V1: %%u1106                               # TEXT  unterstrichender Text aus Caigos
-    # V2: {\fArial|b0|i1|c0|p34;\L151}          # MTEXT unterstrichender Text  vom LVA
-    # V3: \fTimes New Roman|i1|b0;Rue Presles   # MTEXT Datei PONT A CELLES 2010.dxf von pierre.mariemont
-    # V4: \S558/15;                             # MTEXT komplette gebrochene Flurstücksnummer (Geograf)
+    # V1: %%u1106                                   # TEXT  unterstrichender Text aus Caigos
+    # V2: {\fArial|b0|i1|c0|p34;\L151}              # MTEXT unterstrichender Text  vom LVA
+    # V3: \fTimes New Roman|i1|b0;Rue Presles       # MTEXT Datei PONT A CELLES 2010.dxf von pierre.mariemont
+    # V4: \S558/15;                                 # MTEXT komplette gebrochene Flurstücksnummer (Geograf)
+    # V5: \fMS Shell Dlg 2|i0|b0;\H1.98441;265.0m   # MTEXT aus QGIS selbst (Höhenlinien beschritet)
     # ob Text oder MTEXT kann im Moment nicht immer unterschieden werden
 
     underline = False
@@ -159,8 +174,11 @@ def splitText (fText,TxtType):
     font = ""
     delSemi = False
     inFont = False
+    inHText = False
     aktText=fText
     FlNum = False
+    aktSize = None
+    
     if TxtType == "TEXT" or TxtType == "UNDEF":
         # 1. Formatierungen TEXT
         #    Die Codes sind nirgends definiert
@@ -176,6 +194,11 @@ def splitText (fText,TxtType):
         # 2. Formatierungen MTEXT
         for c in aktText:
             # Kennungen mit nachfolgendem Zeichen, welche OGR  nicht auswertet
+            if bs and c.upper() == 'H': # 12.04.17 ignorieren Höhe
+                c=''
+                ignor = True
+                inHText = True 
+                delSemi = True
             if bs and c.upper() == 'O': # ignorieren Overline on/off
                 c=''
                 ignor = True
@@ -193,9 +216,11 @@ def splitText (fText,TxtType):
                 ignor = True
                 inFont = True 
                 delSemi = True
+                
             if c == ';' and delSemi:
                 c= ''
                 inFont=False
+                inHText=False
                 delSemi = False
             # filtert OGR bereits
             #if bs and c.upper() == '~': # nonbreaking space: to space
@@ -218,11 +243,17 @@ def splitText (fText,TxtType):
                 if inFont:
                     font = font + c
                 else:
-                    uText = uText  + c
+                    if inHText:
+                        if aktSize is None:
+                            aktSize = c
+                        else:
+                            aktSize = aktSize + c
+                    else:
+                        uText = uText  + c
                 bs = False
             ignor = False
         aktText = uText
-    return aktText, underline, font, FlNum
+    return aktText, underline, font, FlNum, aktSize
  
 #print splitText(r'%%u1144',"TEXT")    
 
@@ -333,12 +364,13 @@ def DBFedit (shpdat,bFormat,sCharSet):
                         if AktText is None:
                             addHinweis(tr('missing Text: ') + shpdat)
                         else:
-                            t,underline,font, FlNum = splitText(AktText,TxtType)
-                            #print t,underline,TxtType,SubClass
+                            t,underline,font, FlNum, aktSize = splitText(AktText,TxtType)
                             feature.SetField('plaintext', t)
                             # evtl. Formtierungen überschreiben
                             if bFormat:
                                 #print "xx",font
+                                if not aktSize is None:
+                                    feature.SetField('size', aktSize)
                                 if not font is None:
                                     afont = font.split('|')
                                     for p in afont:
@@ -365,7 +397,8 @@ def DBFedit (shpdat,bFormat,sCharSet):
     source.Destroy()
     
 if __name__ == "__main__":
-    w='-0.72g'
-    z,t=ZahlTextSplit(w)
+    print (str(myqtVersion))
+    #w='-0.72g'
+    #z,t=ZahlTextSplit(w)
     #print (z,t)
     dummy=1
