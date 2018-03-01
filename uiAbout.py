@@ -34,10 +34,10 @@ except:
     from PyQt4.QtGui    import QDialog
 
 try:
-    from .fnc4ADXF2Shape   import fncBrowserID
+    from .fnc4ADXF2Shape import *
 
 except:
-    from fnc4ADXF2Shape    import fncBrowserID
+    from fnc4ADXF2Shape import *
 
 
 
@@ -74,7 +74,7 @@ class uiAbout(QDialog, FORM_CLASS):
 if __name__ == "__main__":
     # zur zum lokalen testen
     dummy=0
-    #s = QSettings( "EZUSoft", "ADXF2Shape" )
+    #s = QSettings( "EZUSoft", fncProgKennung() )
     #print str(s.value("SaveWidth", "0"))
     #print int(s.value("SaveWidth", "0"))
 

@@ -77,14 +77,14 @@ from qgis.core import *
 from qgis.utils import *
 
 try:
-    from PyQt5.QtGui import *
+#    from PyQt5.QtGui import *
     from PyQt5.QtWidgets import QMessageBox
     from PyQt5.QtCore import Qt
     from PyQt5 import QtGui, uic
     from PyQt5.QtSql import QSqlDatabase, QSqlQuery, QSqlError
     myqtVersion = 5
 except:
-    from PyQt4.QtGui import *
+#    from PyQt4.QtGui import *
     from PyQt4.QtCore import Qt
     from PyQt4 import QtGui, uic
     from PyQt4.QtSql import QSqlDatabase, QSqlQuery, QSqlError
@@ -93,11 +93,13 @@ except:
 
 try:
     from .fnc4all  import *
-    from .clsDBase import DBFedit
+    from .fnc4ADXF2Shape import *
+    from .clsDBase import DBFedit, ShapeCodepage2Utf8 
     from .TransformTools import ReadWldDat,Helmert4Points
 except:
     from fnc4all  import *
-    from clsDBase import DBFedit
+    from fnc4ADXF2Shape import *
+    from clsDBase import DBFedit, ShapeCodepage2Utf8 
     from TransformTools import ReadWldDat,Helmert4Points
     
 """
@@ -135,6 +137,22 @@ def addCSVLayer(csvDatNam):
     uri = csvDatNam + '?type=csv&delimiter=%5Ct&spatialIndex=no&subsetIndex=no&watchFile=no'
     return QgsVectorLayer(uri, str(uuid.uuid4()), 'delimitedtext')
 """
+def EditQML (datname):
+# Read in the file
+    with open(datname, 'r') as file :
+      filedata = file.read()
+
+    # Replace the target string
+    filedata = filedata.replace('labelsEnabled="0"', 'labelsEnabled="1"')
+
+    # Write the file out again
+    with open(datname, 'w',encoding='utf-8') as file:
+      file.write(filedata)
+
+    #tempName=tempfile.gettempdir() + "/label.qml"
+    #f = open(tempName, "w",encoding='utf-8')
+    #f.close()
+        
 
 def labelingDXF (qLayer, bFormatText, bUseColor4Point, dblFaktor):       
     # Textdarstellung über Punktlabel
@@ -275,7 +293,7 @@ def DelZielDateien (delShp):
     if len(delShp) > 0:
         s=("\n".join(delShp))
         antw=QMessageBox.question(None, tr("Overwriting the following files"), s, QMessageBox.Yes, QMessageBox.Cancel)
-        if antw != QtGui.QMessageBox.Yes:
+        if antw != QMessageBox.Yes:
             return None
         else:
             for shp in delShp:
@@ -467,7 +485,7 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
     # Processing erst hier Laden, um den Start von QGIS zu beschleunigen
     import processing
     from processing.core.Processing import Processing
-    
+
 
     myGroups={}
     
@@ -523,18 +541,31 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
         #else:
         korrSHPDatNam=(EZUTempDir() + str(uuid.uuid4()) + '.shp')           
         hinweislog ('convertformat'+','+korrDXFDatNam +','+ '0'+','+ opt +','+ '"' + korrSHPDatNam + '"')
-        if myqtVersion == 4:
-            pAntw=processing.runalg('gdalogr:convertformat',korrDXFDatNam , 0, opt , korrSHPDatNam)
-        else:
-            # Funktioniert zumindest mit Februarversion 2017 (1282816)
-            # pAntw=processing.runalg('gdal:convertformat',korrDXFDatNam, 0, opt , korrSHPDatNam)
-            pList={'INPUT':korrDXFDatNam,'OPTIONS':opt,'OUTPUT': korrSHPDatNam}
-            pAntw=processing.run('gdal:convertformat',pList) 
-
+        
+        try:
+            if myqtVersion == 4:
+                pAntw=processing.runalg('gdalogr:convertformat',korrDXFDatNam , 0, opt , korrSHPDatNam)
+            else:
+                # Funktioniert zumindest mit Februarversion 2017 (1282816)
+                # pAntw=processing.runalg('gdal:convertformat',korrDXFDatNam, 0, opt , korrSHPDatNam)
+                pList={'INPUT':korrDXFDatNam,'OPTIONS':opt,'OUTPUT': korrSHPDatNam}
+                pAntw=processing.run('gdal:convertformat',pList) 
+        except:
+            addFehler(tr("Error processing: " + DXFDatNam))
+            return False
 
         if pAntw is None:
             addFehler(tr("process 'gdalogr:convertformat' could not start please restart QGIS"))
         else:
+            if myqtVersion == 5:
+                # Unter QGIS3.0 gibt es aktuell ein ganz böses Problem: Das Schreiben der DBF crasht, wenn Kodierung cp1252 ist
+                # --> Shape (DBF)  nach UTF8 konvertieren
+                aktShapeName=korrSHPDatNam
+                korrSHPDatNam=(EZUTempDir() + str(uuid.uuid4()) + '.shp') # neuer Dateiname
+                ShapeCodepage2Utf8 (aktShapeName, korrSHPDatNam, sCharSet)
+                sCharSet="utf-8"
+            
+            
             if os.path.exists(korrSHPDatNam):
                 DBFedit(korrSHPDatNam,bFormatText,sCharSet)
                 if korrSHPDatNam != shpdat:
@@ -544,12 +575,13 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
                     for rest in glob(korrSHPDatNam[0:-4] + '.*'):
                         #printlog ("move:" + rest + '-->' + shpdat[0:-4] + rest[-4:])
                         move(rest,shpdat[0:-4] + rest[-4:])
-                
+
                 # ogr2ogr schreibt den EPSG-code nicht in die prj-Datei, dadurch kommt es beim Einbinden
                 # zu anderenen EPSG-Codes -> Nutzung einer qpj
                 #print qPrjDatName,shpdat[0:-3]+"qpj"
                 copyfile (qPrjDatName,shpdat[0:-3]+"qpj")
                 Layer = QgsVectorLayer(shpdat, "entities"+v[0],"ogr") 
+
              
                 # vermutlich reicht einer der beiden Befehle
                 # unbekannte Codepages werden zu "System"
@@ -567,7 +599,7 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
                             bLayerMitDaten  = True
                     else:
                         addHinweis("No entities for " + opt )
-                    
+
                     # der Layer enthält Daten
                     if bLayerMitDaten:
                         if not bLayer:
@@ -593,7 +625,10 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
                                 addFehler ("Categorization for  " + opt + " could not be executed")
                             if Layer.geometryType() == 0:
                                 labelingDXF (Layer,bFormatText, bUseColor4Point, dblFaktor)                               
-
+                                if Layer.geometryType() == 0 and myqtVersion == 5:
+                                    Layer.saveNamedStyle (qmldat)
+                                    EditQML (qmldat)
+                                    Layer.loadNamedStyle(qmldat)
                         else:
                             # Group by Layer ist aktiviert, für jeden Layer wird eine extra Gruppe erzeugt
                             if myqtVersion == 4:
@@ -646,6 +681,11 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
                                                                             
                                     symbol.setSize( 0.1 )
                                     labelingDXF (Layer, bFormatText, bUseColor4Point, dblFaktor)
+                                    if Layer.geometryType() == 0 and myqtVersion == 5:
+                                        Layer.saveNamedStyle (qmldat)
+                                        EditQML (qmldat)
+                                        Layer.loadNamedStyle(qmldat)
+
                                 if Layer.geometryType() == 1 and bUseColor4Line:
                                     if myqtVersion == 4:
                                         lineMeta = QgsSymbolLayerV2Registry.instance().symbolLayerMetadata("SimpleLine")
@@ -701,12 +741,16 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
                                     else:
                                         Layer.setRenderer(renderer)
                                         Layer.setOpacity(0.5)
-
+                        
+                        # 27.02.18: immer speichern und bei Punkt und qt5 reload
                         Layer.saveNamedStyle (qmldat)
+
                     else:
                         Layer=None # um Datei löschen zu ermöglichen
                         if not DelShapeDatBlock(shpdat):
                             DelShapeDatBlock(shpdat)
+                    
+
                 else:
                     addHinweis (tr("Option '%s' could not be executed")%  opt )
             else:  
@@ -729,6 +773,8 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
     return lList
         """
 if __name__ == "__main__":
+    EditQML ("D:/tar/3_0/DAG_608104-099_DHHN.DXF(byKat)P.qml")
+    print ("hier")
     pass
         
         

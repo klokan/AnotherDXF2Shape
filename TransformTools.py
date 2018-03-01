@@ -22,8 +22,10 @@
 """
 try:
     from .fnc4all import *
+    from .fnc4ADXF2Shape import *
 except:
     from fnc4all  import *
+    from fnc4ADXF2Shape import *
     
 from copy import deepcopy
 import math

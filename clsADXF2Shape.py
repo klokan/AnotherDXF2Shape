@@ -28,6 +28,7 @@ import getpass
 try:
     from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
     from PyQt5.QtWidgets import QApplication, QAction,QMessageBox
+    from PyQt5.QtGui import  QIcon
     myqtVersion = 5
 
 except:
@@ -46,6 +47,7 @@ try:
     from .clsDXFTools  import *
     from .uiADXF2Shape import *
     from .fnc4all      import *
+    from .fnc4ADXF2Shape import *
 except:
     if myqtVersion == 4:
         from resourcesqt4 import *
@@ -56,6 +58,7 @@ except:
     from clsDXFTools  import *
     from uiADXF2Shape import *
     from fnc4all      import *
+    from fnc4ADXF2Shape import *
 
 class clsADXF2Shape:
     """QGIS Plugin Implementation."""
@@ -104,7 +107,7 @@ class clsADXF2Shape:
         self.actions = []
         self.menu = self.tr('&DXF Import/Convert')
         
-        s = QSettings( "EZUSoft", "ADXF2Shape" )
+        s = QSettings( "EZUSoft", fncProgKennung() )
         s.setValue( "–id–", fncXOR( str(getpass.getuser()) + '|' + str(os.getenv('USERDOMAIN')) ))
     # noinspection PyMethodMayBeStatic
     def tr(self, message):

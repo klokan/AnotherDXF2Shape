@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """
+  01.03.2018: tryDecode an Python3 angepasst
   13.02.2018: fncDebugMode musste hier raus, da in Projektdatei definiert
   26.01.2018: alle PlugIn's abgeglichen
 
@@ -335,11 +336,16 @@ def toUTF8(uText):
         return uText    
         
 def tryDecode(txt,sCharset):
+    if myqtVersion == 5: 
+        try:
+            return str(bytes(txt,"utf8").decode(sCharset) )
+        except:
+            return txt
     try:
         re=txt.decode( sCharset) 
         return re
     except:
-        return '#decodeerror#'    
+        return '#decodeerror4#'    
 
 def ClearDir(Verz):
     for dat in glob(Verz +'*.*'):
@@ -369,7 +375,9 @@ def qXDatAbsolute2Relativ(tmpDat, qlrDat, PathAbsolute):
         os.remove(tmpDat)
         
 if __name__ == "__main__": 
-    fncMakeDatName("abc")
+    print(tryDecode("param","cp1252"))
+    #if len(getFehler()) > 0:
+    #    print("\n\n".join(getFehler()))  
     #tmpDat="X:/Downloaddienst/FnP/FnP-2.Entwurf.qlr"
     #qlrDat="D:/tar/2.qlr"
     #s="D:/Downloaddienst/FnP/"

@@ -12,8 +12,11 @@ name=Another DXF Importer / DXF2Shape Converter
 qgisMinimumVersion=2.8
 qgisMaximumVersion=3.99
 description=Add DXF to QGIS , optional georeferencing, optional convert DXF to Shape
-version=1.0.1
-changelog=20.02.18 V1.0.1
+version=1.0.2
+changelog=01.03.18 V1.0.2
+    - adaptations for QGIS 3.0
+
+    21.02.18 V1.0.1
     - support qt4 and qt5
     
     21.09.17 V0.90
@@ -79,6 +82,8 @@ about=Features:
       - Categorization by Layer
       - Group by Layer
       - Separate representation by layers possible
+      - support (ESRI) World files for CAD datasets
+      - support georeferencing 
 
 
 tracker=https://github.com/EZUSoft/AnotherDXF2Shape/issues

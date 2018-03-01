@@ -30,10 +30,10 @@ except:
 
 
 def fncProgKennung():
-    return "CAIGOS-Konnektor" + str(myqtVersion)
+    return "ADXF2Shape" + str(myqtVersion)
 
 def fncProgVersion():
-    return "V 1.01"
+    return "V 1.0.2"
     
 def fncDebugMode(): 
     return True

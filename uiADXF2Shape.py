@@ -51,20 +51,15 @@ except:
     from PyQt4.QtCore import QSize, QSettings, QTranslator, qVersion, QCoreApplication, QObject, QEvent
 
 import os
-"""
-from qgis.utils import os, sys
-import os
-from fnc4all import *
-from TransformTools import *
-from clsDXFTools import DXFImporter
-import clsADXF2Shape
-"""
+
 try:
     from .fnc4all import *
+    from .fnc4ADXF2Shape import *
     from .clsDXFTools import DXFImporter
     from .TransformTools import ReadWldDat
 except:
     from fnc4all import *
+    from fnc4ADXF2Shape import *
     from clsDXFTools import DXFImporter
     from TransformTools import ReadWldDat
 
@@ -475,7 +470,7 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
         self.ManageTransformSettings()
         
 	    # Voreinstellungen setzen
-        s = QSettings( "EZUSoft", "ADXF2Shape" )
+        s = QSettings( "EZUSoft", fncProgKennung() )
         
         # letzte Anzeigegröße wiederherstellen
         SaveWidth  = int(s.value("SaveWidth", "0"))
@@ -545,15 +540,9 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
     
          
     def browseDXFDatei_clicked(self):
-        s = QSettings( "EZUSoft", "ADXF2Shape" )
+        s = QSettings( "EZUSoft", fncProgKennung() )
         lastDXFDir = s.value("lastDXFDir", ".")
-        """
-        DXFDatName = QtGui.QFileDialog.getOpenFileName(self, 'Open File', lastDXFDir, 'DXF  (*.dxf)')
-        self.txtDXFDatNam.setText(DXFDatName)
-        (dxfDir, dxfFile) = os.path.split(DXFDatName)
-        if dxfDir != "":
-            s.setValue("lastDXFDir", dxfDir)
-        """
+
         MerkAnz=self.listDXFDatNam.count()
         Anz=0
         if myqtVersion == 5:
@@ -581,7 +570,7 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
 
 
     def browseZielPfad_clicked(self):
-        s = QSettings( "EZUSoft", "ASHP2Shape" )
+        s = QSettings( "EZUSoft", fncProgKennung() )
         lastSHPDir = s.value("lastSHPDir", ".")
         
         if not os.path.exists(lastSHPDir):
@@ -600,7 +589,7 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
             s.setValue("lastSHPDir", shpDirName)
     
     def OptSpeichern(self):        
-        s = QSettings( "EZUSoft", "ADXF2Shape" )
+        s = QSettings( "EZUSoft", fncProgKennung() )
         s.setValue( "bGenCol", "Ja" if self.chkCol.isChecked() == True else "Nein")
         s.setValue( "bGenLay", "Ja" if self.chkLay.isChecked() == True else "Nein")
         s.setValue( "bGenSHP", "Ja" if self.chkSHP.isChecked() == True else "Nein")
@@ -615,7 +604,7 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
     def btnReset_clicked(self):
         result = QMessageBox.question(None,'Another DXF2Shape' , self.tr('Restore default settings'), QMessageBox.Yes | QMessageBox.No, QMessageBox.No)        
         if result == QMessageBox.Yes:
-            QSettings( "EZUSoft", "ADXF2Shape" ).clear()
+            QSettings( "EZUSoft", fncProgKennung() ).clear()
             self.resize(self.StartWidth,self.StartHeight)
             self.SetzeVoreinstellungen()
     
@@ -748,7 +737,7 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
 
     def RunMenu(self):
         self.exec_()
-        s = QSettings( "EZUSoft", "ADXF2Shape" )
+        s = QSettings( "EZUSoft", fncProgKennung() )
         s.setValue("SaveWidth", str(self.width()))
         s.setValue("SaveHeight", str(self.height()))
 if __name__ == "__main__":

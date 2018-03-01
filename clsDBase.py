@@ -45,8 +45,10 @@ except:
 
 try:
     from .fnc4all import *
+    from .fnc4ADXF2Shape import *
 except:
     from fnc4all  import *
+    from fnc4ADXF2Shape import *
 
 import locale
 
@@ -156,8 +158,17 @@ def csvSplit(csvZeile, trenn=',', tKenn='"', tKennDel = True):
             arr[i] = arr[i].replace(mask,trenn)
 
     return arr
-    
 
+"""  
+def delFormatKenn(aktText):
+    # 01.03.2018 Variante, dass der Text aus der Textspalte und nicht aus der ogr_style Spalte genommen wird
+    #   -> gleiche Funktionalität wie in splitText
+    aktText = aktText.replace('%%c','Ø').replace('%%C','Ø')
+    aktText = aktText.replace('%%u','').replace('%%U','')
+    # muss irgendwann mal mit erledigt werden
+    # aktText = aktText.replace('%%220','Ü')
+    return aktText    
+"""
 def splitText (fText,TxtType):
     #http://docs.autodesk.com/ACD/2010/ENU/AutoCAD%202010%20User%20Documentation/index.html?url=WS1a9193826455f5ffa23ce210c4a30acaf-63b9.htm,topicNumber=d0e123454
     # V1: %%u1106                                   # TEXT  unterstrichender Text aus Caigos
@@ -256,8 +267,20 @@ def splitText (fText,TxtType):
     return aktText, underline, font, FlNum, aktSize
  
 #print splitText(r'%%u1144',"TEXT")    
+def ShapeCodepage2Utf8 (OrgShpDat, TargetShpDat, OrgCodePage):
+    TargetCodePage="utf8"
+    if OrgCodePage == "System":
+        OrgCodePage=locale.getdefaultlocale()[1]
+ 
+    oLayer=QgsVectorLayer(OrgShpDat,None, 'ogr')
+    oLayer.setProviderEncoding(OrgCodePage)
+    oLayer.dataProvider().setEncoding(OrgCodePage)
+    zLayer=QgsVectorFileWriter.writeAsVectorFormat(oLayer,TargetShpDat,TargetCodePage, oLayer.crs(), "ESRI Shapefile")
+
 
 def DBFedit (shpdat,bFormat,sCharSet):
+    #print (shpdat,bFormat,sCharSet)
+
     if sCharSet == "System":
         sCharSet=locale.getdefaultlocale()[1]
 
@@ -267,7 +290,7 @@ def DBFedit (shpdat,bFormat,sCharSet):
         return
     layer = source.GetLayer()
     laydef = layer.GetLayerDefn()
-    
+
     Found = False
     for i in range(laydef.GetFieldCount()):
         if laydef.GetFieldDefn(i).GetName() == 'ogr_style':
@@ -364,10 +387,10 @@ def DBFedit (shpdat,bFormat,sCharSet):
                         if AktText is None:
                             addHinweis(tr('missing Text: ') + shpdat)
                         else:
-                            t,underline,font, FlNum, aktSize = splitText(AktText,TxtType)
-                            feature.SetField('plaintext', t)
                             # evtl. Formtierungen überschreiben
                             if bFormat:
+                                t,underline,font, FlNum, aktSize = splitText(AktText,TxtType)
+                                feature.SetField('plaintext', t)
                                 #print "xx",font
                                 if not aktSize is None:
                                     feature.SetField('size', aktSize)
@@ -383,10 +406,10 @@ def DBFedit (shpdat,bFormat,sCharSet):
                                 feature.SetField('underline', underline)
                                 feature.SetField('flnum', FlNum)
                             else:
+                                feature.SetField('plaintext', AktText)
                                 feature.SetField('underline', False)
                 layer.SetFeature(feature)
             feature = layer.GetNextFeature()
-            
         except:
             if att is None:
                 subLZF ()
@@ -395,10 +418,26 @@ def DBFedit (shpdat,bFormat,sCharSet):
                 
             feature = layer.GetNextFeature()
     source.Destroy()
-    
+
 if __name__ == "__main__":
-    print (str(myqtVersion))
+    fText=r'%%Uihghe%%U'
+    print (splitText (fText,"TEXT"))
+    """
+    import sys,shutil
+    sys.path.append('C:/Users/junghans3/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins/AnotherDXF2Shape')
+    from clsDBase import *
+
+    shpdat="d:/tar/temp.shp"
+    shutil.copyfile ("d:/tar/crash.dbf","d:/tar/temp.dbf")
+    shutil.copyfile ("d:/tar/crash.shp","d:/tar/temp.shp")
+    shutil.copyfile ("d:/tar/crash.shx","d:/tar/temp.shx")
+    bFormat=True
+    sCharSet="System"
+    DBFedit (shpdat,bFormat,sCharSet)
+    if len(getFehler()) > 0:
+            print("\n\n".join(getFehler()))
     #w='-0.72g'
     #z,t=ZahlTextSplit(w)
     #print (z,t)
     dummy=1
+    """
