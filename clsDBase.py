@@ -421,23 +421,3 @@ def DBFedit (shpdat,bFormat,sCharSet):
 
 if __name__ == "__main__":
     fText=r'%%Uihghe%%U'
-    print (splitText (fText,"TEXT"))
-    """
-    import sys,shutil
-    sys.path.append('C:/Users/junghans3/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins/AnotherDXF2Shape')
-    from clsDBase import *
-
-    shpdat="d:/tar/temp.shp"
-    shutil.copyfile ("d:/tar/crash.dbf","d:/tar/temp.dbf")
-    shutil.copyfile ("d:/tar/crash.shp","d:/tar/temp.shp")
-    shutil.copyfile ("d:/tar/crash.shx","d:/tar/temp.shx")
-    bFormat=True
-    sCharSet="System"
-    DBFedit (shpdat,bFormat,sCharSet)
-    if len(getFehler()) > 0:
-            print("\n\n".join(getFehler()))
-    #w='-0.72g'
-    #z,t=ZahlTextSplit(w)
-    #print (z,t)
-    dummy=1
-    """
