@@ -2,6 +2,11 @@
 """
 /***************************************************************************
  clsDXFTools
+    Stand 28.03.2018: Umstellung/Erweiterung auf GeoPackage
+    
+    Stand 28.03.2018: Fehler beim EditQML beseitigt
+    Stand 28.03.2018: Fehler beim CharSet-Handling beseitigt
+    Stand 19.03.2018: DXF (testweise) nur noch bei Notwendigleit kopieren
     Stand 10.11.2017: Einheitliche Grundlage QT4/QT5
     Änderungen V0.9:
         Georeferenzieruzngsmodul
@@ -70,11 +75,13 @@ from shutil import copyfile
 import uuid
 import sys
 import os
+import locale
 from glob import glob
 from shutil import copyfile, move
 
 from qgis.core import *
 from qgis.utils import *
+
 
 try:
 #    from PyQt5.QtGui import *
@@ -94,12 +101,12 @@ except:
 try:
     from .fnc4all  import *
     from .fnc4ADXF2Shape import *
-    from .clsDBase import DBFedit, ShapeCodepage2Utf8 
+    from .clsDBase import attTableEdit, ShapeCodepage2Utf8 
     from .TransformTools import ReadWldDat,Helmert4Points
 except:
     from fnc4all  import *
     from fnc4ADXF2Shape import *
-    from clsDBase import DBFedit, ShapeCodepage2Utf8 
+    from clsDBase import attTableEdit, ShapeCodepage2Utf8 
     from TransformTools import ReadWldDat,Helmert4Points
     
 """
@@ -146,13 +153,10 @@ def EditQML (datname):
     filedata = filedata.replace('labelsEnabled="0"', 'labelsEnabled="1"')
 
     # Write the file out again
-    with open(datname, 'w',encoding='utf-8') as file:
+    with open(datname, 'w') as file:
       file.write(filedata)
 
-    #tempName=tempfile.gettempdir() + "/label.qml"
-    #f = open(tempName, "w",encoding='utf-8')
-    #f.close()
-        
+
 
 def labelingDXF (qLayer, bFormatText, bUseColor4Point, dblFaktor):       
     # Textdarstellung über Punktlabel
@@ -206,7 +210,7 @@ def kat4Layer(layer, bUseColor4Line,bUseColor4Poly):
     else:
         fni = layer.dataProvider().fieldNameIndex('Layer')
         unique_values = layer.dataProvider().uniqueValues(fni)
-    
+
     symbol_layer = None
     # define categories
     categories = []
@@ -289,25 +293,26 @@ def DelShapeDatBlock (shpDat):
         return None
     
 
-def DelZielDateien (delShp):
-    if len(delShp) > 0:
-        s=("\n".join(delShp))
+def DelZielDateien (delDatArr,sOutForm):
+    if len(delDatArr) > 0:
+        s=("\n".join(delDatArr))
         antw=QMessageBox.question(None, tr("Overwriting the following files"), s, QMessageBox.Yes, QMessageBox.Cancel)
         if antw != QMessageBox.Yes:
             return None
         else:
-            for shp in delShp:
+            for dat in delDatArr:
                 try:
-                    rest=shp # für Fehlermeldung
-                    os.remove(shp)
-                    for rest in glob(shp[0:-4] + '.*'):
-                        os.remove(rest)
+                    rest=dat # für Fehlermeldung
+                    os.remove(dat)
+                    if sOutForm == "SHP":
+                        for rest in glob(dat[0:-4] + '.*'):
+                            os.remove(rest)
                 except (OSError, e):  ## if failed, report it back to the user ##
                     QMessageBox.critical(None, tr("DZD:file remove error"),"Error: %s - %s." % (e.filename,e.strerror)) 
                     return None
     return True
 
-def ProjDaten4Dat(AktDXFDatNam, bCol, bLayer, bSHPSave):
+def ProjDaten4Dat(AktDXFDatNam, bCol, bLayer, bZielSave):
     pList1=("P:POINT:LIKE \'%POINT%\'",
     "L:LINESTRING:LIKE '%LINE%'",
     "F:POLYGON:LIKE \'%POLYGON%\'")
@@ -335,7 +340,7 @@ def ProjDaten4Dat(AktDXFDatNam, bCol, bLayer, bSHPSave):
         ProjektName=ProjektName + 'byLay)'
     else:
         ProjektName=ProjektName + 'byKat)'
-    if bSHPSave:
+    if bZielSave:
         if ProjektName[-4:]==".dxf":
             Kern=ProjektName[0:-4]
         else:    
@@ -346,18 +351,19 @@ def ProjDaten4Dat(AktDXFDatNam, bCol, bLayer, bSHPSave):
     
     return AktList,AktOpt,ProjektName, Kern
 
-def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet,  bCol,bLayer, bFormatText, bUseColor4Point, bUseColor4Line, bUseColor4Poly, dblFaktor, chkTransform, DreiPassPunkte ):    
+def DXFImporter(uiParent, sOutForm, listDXFDatNam, zielPfadOrDatei, bZielSave, sCharSet,  bCol, bLayer, bFormatText, bUseColor4Point, bUseColor4Line, bUseColor4Poly, dblFaktor, chkTransform, DreiPassPunkte ):    
     # 23.02.17
     # Processing erst hier Laden, um den Start von QGIS zu beschleunigen
     import processing
     from processing.core.Processing import Processing
+
     
     # -----------------------------------------------------------------------------------------------    
     # 1. Löschen der alten Projekte und evtl.if myqtVersion == 4 Ermittlung der zu überschreibenden Dateien
-    delShp=[]
+    delZielDat=[]
     for i in range(listDXFDatNam.count()):
         AktDXFDatNam=listDXFDatNam.item(i).text()
-        AktList,AktOpt,ProjektName, Kern =ProjDaten4Dat(AktDXFDatNam,bCol,bLayer, bSHPSave)
+        AktList,AktOpt,ProjektName, Kern =ProjDaten4Dat(AktDXFDatNam, bCol, bLayer, bZielSave)
         
         # evtl. Projektname (-gruppe) in Root löschen
         rNode=QgsProject.instance().layerTreeRoot()
@@ -366,15 +372,19 @@ def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet,  bCol,bLayer,
                 if node.name() == ProjektName:
                         rNode.removeChildNode(node)
       
-        # evtl. Zieldateien ermitteln
-        if bSHPSave:
-            for p in AktList:
-                v = p.split(":")
-                shpdat=shpPfad+Kern+v[0]+'.shp'
+        # evtl. Shape Zieldateien ermitteln und löschen
+        if bZielSave:
+            if sOutForm == "SHP":
+                for p in AktList:
+                    v = p.split(":")
+                    shpdat=zielPfadOrDatei+Kern+v[0]+'.shp'
+                    if os.path.exists(shpdat):
+                        delZielDat.append (shpdat)
+            else:
+                gpkgdat=zielPfadOrDatei+Kern+'.gpkg'
                 if os.path.exists(shpdat):
-                    delShp.append (shpdat)
-                       
-    if not DelZielDateien (delShp):
+                    delZielDat.append (gpkgdat)
+    if not DelZielDateien (delZielDat, sOutForm):
         QMessageBox.information(None, tr("Cancel"), tr("Please set target"))
         return None
     
@@ -429,7 +439,7 @@ def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet,  bCol,bLayer,
                 uiParent.SetDatAktionText(tr("Import: " + AktDXFDatNam.encode("utf8") ))
             uiParent.SetDatAktionAktSchritt(i+1)
             
-            AktList,AktOpt,ProjektName, Kern = ProjDaten4Dat(AktDXFDatNam,bCol,bLayer, bSHPSave)
+            AktList,AktOpt,ProjektName, Kern = ProjDaten4Dat(AktDXFDatNam,bCol,bLayer, bZielSave)
 
             
             iface.mapCanvas().setRenderFlag( False )    
@@ -466,7 +476,7 @@ def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet,  bCol,bLayer,
                     addFehler(wldDat + ": " + tr("file not found"))
                 
 
-            Antw = EineDXF (uiParent,grpProjekt,AktList, Kern, AktOpt, AktDXFDatNam,shpPfad, qPrjDatName, sCharSet, bLayer, bFormatText, bUseColor4Point,bUseColor4Line,bUseColor4Poly, dblFaktor, okTransform, DreiPassPunkte)
+            Antw = EineDXF (uiParent, mLay.crs(), bZielSave, sOutForm, grpProjekt, AktList, Kern, AktOpt, AktDXFDatNam, zielPfadOrDatei, qPrjDatName, sCharSet, bLayer, bFormatText, bUseColor4Point,bUseColor4Line,bUseColor4Poly, dblFaktor, okTransform, DreiPassPunkte)
     # Ausgangswerte wieder herstellen
     QSettings().setValue(crsRegParam4NewLayer,crsArt)
     QSettings().setValue('/Projections/layerDefaultCrs',crsDefWert)
@@ -480,13 +490,13 @@ def DXFImporter(uiParent,listDXFDatNam,shpPfad,bSHPSave, sCharSet,  bCol,bLayer,
     
     uiParent.FormRunning(False)
         
-def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjDatName, sCharSet, bLayer, bFormatText, bUseColor4Point,bUseColor4Line,bUseColor4Poly, dblFaktor,chkTransform, DreiPassPunkte):
+def EineDXF(uiParent, mLay_crs, bZielSave, sOutForm, grpProjekt,AktList, Kern, AktOpt, DXFDatNam, zielPfadOrDatei, qPrjDatName, sOrgCharSet, bLayer, bFormatText, bUseColor4Point,bUseColor4Line,bUseColor4Poly, dblFaktor,chkTransform, DreiPassPunkte):
     # 23.02.17
     # Processing erst hier Laden, um den Start von QGIS zu beschleunigen
     import processing
     from processing.core.Processing import Processing
-
-
+   
+    sCharSet=sOrgCharSet
     myGroups={}
     
     # ----------------------------------------------------------------------------
@@ -499,14 +509,15 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
     #           deshalb neue Strategie zum Erkennen der Umlaute
     
     # 21.02.17: grundsätzlich mit Kopie, da runalg die Datei sperrt und nicht mehr frei gibt
-    #if ifAscii(DXFDatNam):
-    #    korrDXFDatNam=DXFDatNam
-    #else:
-    uiParent.SetAktionGesSchritte(2)
-    uiParent.SetAktionText(tr("Copy DXF-File"))
-    uiParent.SetAktionAktSchritt(1)
-    korrDXFDatNam=(EZUTempDir() + str(uuid.uuid4()) + '.dxf')
-    copyfile(DXFDatNam, korrDXFDatNam)
+    # 19.03.18: noch mal überlegen/testen: es gibt dxf's, welche durch dictionary's mehere GByte haben-da ist kopieren nicht so geil
+    if ifAscii(DXFDatNam):
+        korrDXFDatNam=DXFDatNam
+    else:
+        uiParent.SetAktionGesSchritte(2)
+        uiParent.SetAktionText(tr("Copy DXF-File"))
+        uiParent.SetAktionAktSchritt(1)
+        korrDXFDatNam=(EZUTempDir() + str(uuid.uuid4()) + '.dxf')
+        copyfile(DXFDatNam, korrDXFDatNam)
     #printlog ("Copy" + DXFDatNam + ' --> ' + korrDXFDatNam)
     
     optGCP = ""
@@ -524,12 +535,16 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
             uiParent.SetAktionText(tr("Edit Entity: " + Kern+v[0] ))
         else:
             uiParent.SetAktionText(tr("Edit Entity: " + Kern.encode("utf8")+v[0] ))
+        
         uiParent.SetAktionAktSchritt(zE)
-        shpdat=shpPfad+Kern+v[0]+'.shp'
-        qmldat=shpPfad+Kern+v[0]+'.qml'
+        if sOutForm == "SHP":
+            iOutForm = 0 # •0 — ESRI Shapedatei
+            shpdat=zielPfadOrDatei+Kern+v[0]+'.shp'
+            qmldat=zielPfadOrDatei+Kern+v[0]+'.qml'
+        else:
+            qmldat =  EZUTempDir() + str(uuid.uuid4()) + '.qml'
+            gpkgTable=Kern+v[0]
 
-        opt=  ('-skipfailure %s -nlt %s %s -sql "select *, ogr_style from entities where OGR_GEOMETRY %s"') % (AktOpt,v[1],optGCP,v[2])
-        #opt=  ('-skipfailure %s -nlt %s -where "OGR_GEOMETRY %s"') % (AktOpt,v[1],v[2])
         
         # ----------------------------------------------------------------------------
         # Dateiziel anpassen
@@ -539,17 +554,39 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
         #if ifAscii(shpdat):
         #    korrSHPDatNam=shpdat
         #else:
-        korrSHPDatNam=(EZUTempDir() + str(uuid.uuid4()) + '.shp')           
-        hinweislog ('convertformat'+','+korrDXFDatNam +','+ '0'+','+ opt +','+ '"' + korrSHPDatNam + '"')
-        
-        try:
-            if myqtVersion == 4:
-                pAntw=processing.runalg('gdalogr:convertformat',korrDXFDatNam , 0, opt , korrSHPDatNam)
+        if sOutForm == "SHP":
+            if bZielSave:
+                korrSHPDatNam=(EZUTempDir() + str(uuid.uuid4()) + '.shp') 
             else:
-                # Funktioniert zumindest mit Februarversion 2017 (1282816)
-                # pAntw=processing.runalg('gdal:convertformat',korrDXFDatNam, 0, opt , korrSHPDatNam)
-                pList={'INPUT':korrDXFDatNam,'OPTIONS':opt,'OUTPUT': korrSHPDatNam}
+                korrSHPDatNam=shpdat            
+        
+        bKonvOK=False
+        try:
+            if sOutForm == "SHP":
+                opt=  ('-skipfailure %s -nlt %s %s -sql "select *, ogr_style from entities where OGR_GEOMETRY %s"') % (AktOpt,v[1],optGCP,v[2])      
+                hinweislog ('convertformat'+','+korrDXFDatNam +','+ '0'+','+ opt +','+ '"' + korrSHPDatNam + '"') 
+                if myqtVersion == 4:
+                    pAntw=processing.runalg('gdalogr:convertformat',korrDXFDatNam , 0, opt , korrSHPDatNam)
+                else:
+                    # das zu erzeugende Ausgabeformat wird über die Dateiendung definiert 
+                    pList={'INPUT':korrDXFDatNam,'OPTIONS':opt,'OUTPUT': korrSHPDatNam}
+                    pAntw=processing.run('gdal:convertformat',pList) 
+                if os.path.exists(korrSHPDatNam): bKonvOK = True
+            else:
+                # nur für QGIS 3.x definiert
+                if sCharSet == "System":
+                    ogrCharSet=locale.getdefaultlocale()[1]
+                else:
+                    ogrCharSet=sCharSet
+                ogrCharSet=ogrCharSet.upper()              
+                
+                opt = '-append -update --config DXF_ENCODING "' + ogrCharSet + '" '
+                opt = opt + ('%s -nlt %s %s -sql "select *, ogr_style from entities where OGR_GEOMETRY %s" -nln %s ') % (AktOpt,v[1],optGCP,v[2], gpkgTable)      
+                #opt = opt + ' -s_srs EPSG:25833 -t_srs EPSG:25833 '
+                hinweislog ('convertformat'+','+korrDXFDatNam +','+ '0'+','+ opt +','+ '"' + zielPfadOrDatei + '"') 
+                pList={'INPUT':korrDXFDatNam,'OPTIONS':opt,'OUTPUT': zielPfadOrDatei}
                 pAntw=processing.run('gdal:convertformat',pList) 
+                if os.path.exists(zielPfadOrDatei):bKonvOK = True 
         except:
             addFehler(tr("Error processing: " + DXFDatNam))
             return False
@@ -557,36 +594,43 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
         if pAntw is None:
             addFehler(tr("process 'gdalogr:convertformat' could not start please restart QGIS"))
         else:
-            if myqtVersion == 5:
+            if myqtVersion == 5 and sOutForm == "SHP":
                 # Unter QGIS3.0 gibt es aktuell ein ganz böses Problem: Das Schreiben der DBF crasht, wenn Kodierung cp1252 ist
                 # --> Shape (DBF)  nach UTF8 konvertieren
                 aktShapeName=korrSHPDatNam
                 korrSHPDatNam=(EZUTempDir() + str(uuid.uuid4()) + '.shp') # neuer Dateiname
-                ShapeCodepage2Utf8 (aktShapeName, korrSHPDatNam, sCharSet)
+                ShapeCodepage2Utf8 (aktShapeName, korrSHPDatNam, sOrgCharSet) # 28.03.18 sOrgCharSet 
                 sCharSet="utf-8"
             
-            
-            if os.path.exists(korrSHPDatNam):
-                DBFedit(korrSHPDatNam,bFormatText,sCharSet)
-                if korrSHPDatNam != shpdat:
-                    # evtl. korrigierte Dateiname umbenennen
-                    #printlog ("move:" + korrSHPDatNam + '-->' + shpdat)
-                    move(korrSHPDatNam,shpdat)
-                    for rest in glob(korrSHPDatNam[0:-4] + '.*'):
-                        #printlog ("move:" + rest + '-->' + shpdat[0:-4] + rest[-4:])
-                        move(rest,shpdat[0:-4] + rest[-4:])
+            if bKonvOK:
+                if sOutForm == "SHP":
+                    attTableEdit(sOutForm,korrSHPDatNam,bFormatText,sCharSet)
+                    if korrSHPDatNam != shpdat:
+                        # evtl. korrigierte Dateiname umbenennen
+                        #printlog ("move:" + korrSHPDatNam + '-->' + shpdat)
+                        move(korrSHPDatNam,shpdat)
+                        for rest in glob(korrSHPDatNam[0:-4] + '.*'):
+                            #printlog ("move:" + rest + '-->' + shpdat[0:-4] + rest[-4:])
+                            move(rest,shpdat[0:-4] + rest[-4:])
 
-                # ogr2ogr schreibt den EPSG-code nicht in die prj-Datei, dadurch kommt es beim Einbinden
-                # zu anderenen EPSG-Codes -> Nutzung einer qpj
-                #print qPrjDatName,shpdat[0:-3]+"qpj"
-                copyfile (qPrjDatName,shpdat[0:-3]+"qpj")
-                Layer = QgsVectorLayer(shpdat, "entities"+v[0],"ogr") 
+                    # ogr2ogr schreibt den EPSG-code nicht in die prj-Datei, dadurch kommt es beim Einbinden
+                    # zu anderenen EPSG-Codes -> Nutzung einer qpj
+                    #print qPrjDatName,shpdat[0:-3]+"qpj"
+                    copyfile (qPrjDatName,shpdat[0:-3]+"qpj")
+                    Layer = QgsVectorLayer(shpdat, "entities"+v[0],"ogr") 
 
-             
-                # vermutlich reicht einer der beiden Befehle
-                # unbekannte Codepages werden zu "System"
-                Layer.setProviderEncoding(sCharSet)
-                Layer.dataProvider().setEncoding(sCharSet)        
+                 
+                    # vermutlich reicht einer der beiden Befehle
+                    # unbekannte Codepages werden zu "System"
+                    Layer.setProviderEncoding(sCharSet)
+                    Layer.dataProvider().setEncoding(sCharSet) 
+                else:
+                    attTableEdit(sOutForm,zielPfadOrDatei,bFormatText,sCharSet,gpkgTable)
+                    sLayer="%s|layername=%s" %(zielPfadOrDatei,gpkgTable) #|geometrytype=Point"
+                    Layer = QgsVectorLayer(sLayer, "entities"+v[0],"ogr") 
+                    Layer.setCrs(mLay_crs)
+                    if Layer.featureCount() < 0: Layer=None # bei QGIS3 wird bei Fehlern -2 zurückgegeben If Layer führt dann zu Fehlern
+                    
                 if Layer:
                     # Kontrolle, ob was sinnvolles im Layer ist. Ogr erzeugt öfters Shapes ohne Koordinaten
                     bLayerMitDaten = False
@@ -623,12 +667,14 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
                                     Layer.setRenderer(Rend)
                             else:
                                 addFehler ("Categorization for  " + opt + " could not be executed")
+                            
                             if Layer.geometryType() == 0:
                                 labelingDXF (Layer,bFormatText, bUseColor4Point, dblFaktor)                               
                                 if Layer.geometryType() == 0 and myqtVersion == 5:
                                     Layer.saveNamedStyle (qmldat)
                                     EditQML (qmldat)
                                     Layer.loadNamedStyle(qmldat)
+
                         else:
                             # Group by Layer ist aktiviert, für jeden Layer wird eine extra Gruppe erzeugt
                             if myqtVersion == 4:
@@ -644,12 +690,18 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
                                 uiParent.SetAktionText("Edit Layer: " + AktLayerNam )
                                 uiParent.SetAktionAktSchritt(zL)
                                 zL=zL+1
-                                Layer = QgsVectorLayer(shpdat, AktLayerNam+'('+v[0]+')',"ogr")
-                                # vermutlich reicht einer der beiden Befehle
-                                # unbekannte Codepages werden zu "System"
-                                Layer.setProviderEncoding(sCharSet)
-                                Layer.dataProvider().setEncoding(sCharSet)   
-                                Layer.setSubsetString( "Layer = '" + AktLayerNam + "'" )
+                                if sOutForm == "SHP":
+                                    Layer = QgsVectorLayer(shpdat, AktLayerNam+'('+v[0]+')',"ogr")
+                                    # vermutlich reicht einer der beiden Befehle
+                                    # unbekannte Codepages werden zu "System"
+                                    Layer.setProviderEncoding(sCharSet)
+                                    Layer.dataProvider().setEncoding(sCharSet)   
+                                    Layer.setSubsetString( "Layer = '" + AktLayerNam + "'" )
+                                else:
+                                    Layer = QgsVectorLayer(sLayer, AktLayerNam+'('+v[0]+')',"ogr") 
+                                    Layer.setCrs(mLay_crs)
+                                    Layer.setSubsetString( "Layer = '" + AktLayerNam + "'" )
+                                    if Layer.featureCount() < 0: Layer=None # bei QGIS3 wird bei Fehlern -2 zurückgegeben If Layer führt dann zu Fehlern
 
                                 if myqtVersion == 4:
                                     QgsMapLayerRegistry.instance().addMapLayer(Layer, False)
@@ -743,7 +795,10 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
                                         Layer.setOpacity(0.5)
                         
                         # 27.02.18: immer speichern und bei Punkt und qt5 reload
-                        Layer.saveNamedStyle (qmldat)
+                        if sOutForm == "SHP":
+                            Layer.saveNamedStyle (qmldat)
+                        else:
+                            Layer.saveStyleToDatabase(gpkgTable, gpkgTable, True, "")
 
                     else:
                         Layer=None # um Datei löschen zu ermöglichen
@@ -753,8 +808,11 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
 
                 else:
                     addHinweis (tr("Option '%s' could not be executed")%  opt )
-            else:  
-                addFehler(tr("Creation '%s' failed. Please look to the QGIS log message panel (OGR)") % shpdat )
+            else:
+                if sOutForm == "SHP":
+                    addFehler(tr("Creation '%s' failed. Please look to the QGIS log message panel (OGR)") % shpdat )
+                else:
+                    addFehler(tr("Creation '%s' failed. Please look to the QGIS log message panel (OGR)") % zielPfadOrDatei )
 
 
     uiParent.SetAktionGesSchritte(2)
@@ -773,7 +831,11 @@ def EineDXF(uiParent,grpProjekt,AktList, Kern, AktOpt, DXFDatNam, shpPfad, qPrjD
     return lList
         """
 if __name__ == "__main__":
-    EditQML ("D:/tar/3_0/DAG_608104-099_DHHN.DXF(byKat)P.qml")
+    #EditQML ("d:/tar/q.qml")
+    sys.path.append('C:/Interware/QGIS3/apps/qgis/python/plugins')
+    import processing
+    
+
     print ("hier")
     pass
         

@@ -33,7 +33,7 @@ def fncProgKennung():
     return "ADXF2Shape" + str(myqtVersion)
 
 def fncProgVersion():
-    return "V 1.0.2"
+    return "V " + fncPluginVersion()
     
 def fncDebugMode(): 
     return True
@@ -49,16 +49,11 @@ def tr( message):
 def fncCGFensterTitel(intCG = None):
     s = QSettings( "EZUSoft", fncProgKennung() )
     sVersion = "-"
-    if not intCG :
-        intCG = int(s.value( "cgversion",-1))
-    if intCG == 0:
-        sVersion = "11.2"
-    if intCG == 1:        
-        sVersion = "2016"
-    return u"CAIGOS Importer für Version " + sVersion + "   (Programmversion " + fncProgVersion() + ")" 
+
+    return u"Another DXF Import/Converter " + sVersion + "   (PlugIn Version: " + fncProgVersion() + ")" 
     
 if __name__ == "__main__": 
-    print (fncCGFensterTitel())
+    print (fncProgVersion())
     pass
 
 

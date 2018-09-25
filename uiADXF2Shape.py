@@ -2,6 +2,7 @@
 """
 /***************************************************************************
  uiADXF2Shape
+    Stand 31.07.2018: Einbau GeoPackage
     Stand 10.11.2017: Einheitliche Grundlage QT4/QT5
     Änderungen V0.9:
         Georeferenzieruzngsmodul
@@ -228,10 +229,14 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+        self.setWindowTitle (fncCGFensterTitel())
         self.browseDXFDatei.clicked.connect(self.browseDXFDatei_clicked)    
-        self.browseZielPfad.clicked.connect(self.browseZielPfad_clicked) 
+        self.browseZielPfadOrDatei.clicked.connect(self.browseZielPfadOrDatei_clicked) 
         self.chkSHP.clicked.connect(self.chkSHP_clicked)
+        
 
+            
+        
         self.listDXFDatNam.currentRowChanged.connect(self.wld4listDXFDatNam)
         self.chkTransform.clicked.connect(self.chkTransform_clicked) 
         self.optTParam.clicked.connect(self.ManageTransformSettings) 
@@ -351,21 +356,7 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
                 dblValue=""
                 self.leTYOff.setFocus()
             self.leTYOff.setText(str(dblValue))
-    """ Funktion aktuell entfernt
-    def KorrAktParam_leTScale (self):
-        if self.leTScale.text() !="":
-            try:
-                intValue=int(float(self.leTScale.text().replace(",",".")))
-            except:
-                msgbox (self.tr("There is no integer value"))
-                intValue=""
-                self.leTScale.setFocus()
-            if intValue==0:
-                msgbox (self.tr("scale with zero is not allowed"))
-                intValue=""
-                self.leTScale.setFocus()           
-            self.leTScale.setText(str(intValue))        
-    """
+
     
     def CheckKonstTransWerte(self):
     # Bei Fehler Rückgabe False und Fehlertext
@@ -499,6 +490,20 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
         self.chkSHP.setChecked(bGenSHP)
         self.chkSHP_clicked()
         
+        # GeoPackage ab QGIS 3.0 und V1.1.0
+        Haupt,Neben,Revision=fncPluginVersion().split(".")
+        if myqtVersion == 5 and ( int(Haupt) >= 1 and int(Neben) >= 1): 
+            bGenGPKG = True if s.value( "bGenGPKG", "Nein" ) == "Ja" else False
+            self.chkGPKG.setVisible(True)
+
+        else:
+            bGenGPKG = False
+            self.chkGPKG.setVisible(False)
+       
+
+        self.chkGPKG.setChecked(bGenGPKG)
+        self.chkGPKG_clicked()
+        
         iCodePage=s.value( "iCodePage", 0 ) 
         self.txtFaktor.setText('1.3')
 
@@ -527,17 +532,43 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
             self.tabSetting.setCurrentIndex(1)
         
     def chkSHP_clicked(self):
+        if self.chkGPKG.isChecked():
+            self.chkGPKG.setChecked(False)
+            self.txtZielPfad.setText("")
+        
+        s = QSettings( "EZUSoft", fncProgKennung() )
+        if self.chkSHP.isChecked():
+            self.txtZielPfad.setText( s.value("lastSHPDir", ".")) 
+            
         bGenSHP=self.chkSHP.isChecked()
-        self.lbSHP.setEnabled(bGenSHP)      
+        self.lbOutput.setEnabled(bGenSHP)      
         self.txtZielPfad.setEnabled(bGenSHP)      
-        self.browseZielPfad.setEnabled(bGenSHP) 
+        self.browseZielPfadOrDatei.setEnabled(bGenSHP) 
         if bGenSHP:
             self.txtZielPfad.setPlaceholderText(self.tr("Specify destination path")) 
-            self.lbSHP.setText(self.tr(u"Output shape path"))
+            self.lbOutput.setText(self.tr(u"Output shape path"))
         else:
             self.txtZielPfad.setPlaceholderText("") 
-            self.lbSHP.setText("") 
-    
+            self.lbOutput.setText("") 
+
+    def chkGPKG_clicked(self):
+        if self.chkSHP.isChecked():
+            self.chkSHP.setChecked(False)
+            
+        s = QSettings( "EZUSoft", fncProgKennung() )    
+        if self.chkGPKG.isChecked():
+            self.txtZielPfad.setText( s.value("lastGPKGFile", "."))           
+
+        bGenGPKG=self.chkGPKG.isChecked()
+        self.lbOutput.setEnabled(bGenGPKG)      
+        self.txtZielPfad.setEnabled(bGenGPKG)      
+        self.browseZielPfadOrDatei.setEnabled(bGenGPKG) 
+        if bGenGPKG:
+            self.txtZielPfad.setPlaceholderText(self.tr("Specify GeoPackage file")) 
+            self.lbOutput.setText(self.tr(u"Output GeoPackage-file"))
+        else:
+            self.txtZielPfad.setPlaceholderText("") 
+            self.lbOutput.setText("")             
          
     def browseDXFDatei_clicked(self):
         s = QSettings( "EZUSoft", fncProgKennung() )
@@ -569,30 +600,38 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
             self.wld4listDXFDatNam()
 
 
-    def browseZielPfad_clicked(self):
+    def browseZielPfadOrDatei_clicked(self):
         s = QSettings( "EZUSoft", fncProgKennung() )
-        lastSHPDir = s.value("lastSHPDir", ".")
-        
-        if not os.path.exists(lastSHPDir):
-            lastSHPDir=os.getcwd() 
+        if self.chkSHP.isChecked():
+            lastSHPDir = s.value("lastSHPDir", ".")           
+            if not os.path.exists(lastSHPDir): lastSHPDir=os.getcwd() 
+            if myqtVersion == 5:
+                flags = QtWidgets.QFileDialog.DontResolveSymlinks | QtWidgets.QFileDialog.ShowDirsOnly
+                shpDirName = QtWidgets.QFileDialog.getExistingDirectory(self, "Open Directory",lastSHPDir,flags)
+            else:
+                flags = QtGui.QFileDialog.DontResolveSymlinks | QtGui.QFileDialog.ShowDirsOnly
+                shpDirName = QtGui.QFileDialog.getExistingDirectory(self, "Open Directory",lastSHPDir,flags)
+            shpDirName=shpDirName.replace("\\","/")
+            self.txtZielPfad.setText(shpDirName)
+            if shpDirName != "": s.setValue("lastSHPDir", shpDirName)
 
-        if myqtVersion == 5:
-            flags = QtWidgets.QFileDialog.DontResolveSymlinks | QtWidgets.QFileDialog.ShowDirsOnly
-            shpDirName = QtWidgets.QFileDialog.getExistingDirectory(self, "Open Directory",lastSHPDir,flags)
-        else:
-            flags = QtGui.QFileDialog.DontResolveSymlinks | QtGui.QFileDialog.ShowDirsOnly
-            shpDirName = QtGui.QFileDialog.getExistingDirectory(self, "Open Directory",lastSHPDir,flags)
-        shpDirName=shpDirName.replace("\\","/")
-        self.txtZielPfad.setText(shpDirName)
-
-        if shpDirName != "":
-            s.setValue("lastSHPDir", shpDirName)
-    
+        if self.chkGPKG.isChecked():
+            lastGPKGFile = s.value("lastGPKGFile", ".")           
+            if not os.path.exists(lastGPKGFile): lastGPKGFile=os.getcwd() 
+            if myqtVersion == 5:
+                gpkgFile=QFileDialog.getOpenFileName(self, 'Open File', lastGPKGFile, 'Geopackage  (*.gpkg)')[0]
+            else:
+                gpkgFile=QFileDialog.getOpenFileName(self, 'Open File', lastGPKGFile, 'Geopackage  (*.gpkg)')
+            gpkgFile=gpkgFile.replace("\\","/")
+            self.txtZielPfad.setText(gpkgFile)
+            if gpkgFile != "": s.setValue("lastGPKGFile", gpkgFile)   
+            
     def OptSpeichern(self):        
         s = QSettings( "EZUSoft", fncProgKennung() )
         s.setValue( "bGenCol", "Ja" if self.chkCol.isChecked() == True else "Nein")
         s.setValue( "bGenLay", "Ja" if self.chkLay.isChecked() == True else "Nein")
         s.setValue( "bGenSHP", "Ja" if self.chkSHP.isChecked() == True else "Nein")
+        s.setValue( "bGenGPKG", "Ja" if self.chkGPKG.isChecked() == True else "Nein")
         s.setValue( "bFormatText", "Ja" if self.chkUseTextFormat.isChecked() == True else "Nein")
         s.setValue( "bUseColor4Point", "Ja" if self.chkUseColor4Point.isChecked() == True else "Nein")
         s.setValue( "bUseColor4Line", "Ja" if self.chkUseColor4Line.isChecked() == True else "Nein")
@@ -665,7 +704,7 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
         self.OptSpeichern()
         self.tabSetting.setCurrentIndex(0) # erste Registerkarte, damit Laufbalken sichtbar
         
-        Antw = DXFImporter (self, self.listDXFDatNam, ZielPfad, self.chkSHP.isChecked(), self.cbCharSet.currentText(),self.chkCol.isChecked(),self.chkLay.isChecked(), self.chkUseTextFormat.isChecked(), self.chkUseColor4Point.isChecked(), self.chkUseColor4Line.isChecked(), self.chkUseColor4Poly.isChecked(), dblFaktor, self.chkTransform.isChecked(), DreiPassPunkte)
+        Antw = DXFImporter (self, "SHP", self.listDXFDatNam, ZielPfad, self.chkSHP.isChecked(), self.cbCharSet.currentText(),self.chkCol.isChecked(),self.chkLay.isChecked(), self.chkUseTextFormat.isChecked(), self.chkUseColor4Point.isChecked(), self.chkUseColor4Line.isChecked(), self.chkUseColor4Poly.isChecked(), dblFaktor, self.chkTransform.isChecked(), DreiPassPunkte)
         self.FormRunning(False) # nur sicherheitshalber, falls in DXFImporter übersprungen/vergessen
         
     
@@ -700,14 +739,14 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
                 ctl.hide()
             else:
                 ctl.show()
-        Anz(self.lbFormat); Anz(self.lbColor); Anz(self.lbGDAL); Anz(self.lbDXF); Anz(self.lbSHP); Anz(self.lblCharSet)
+        Anz(self.lbFormat); Anz(self.lbColor); Anz(self.lbGDAL); Anz(self.lbDXF); Anz(self.lbOutput); Anz(self.lblCharSet)
         Anz(self.chkUseTextFormat);Anz(self.chkUseColor4Point); Anz(self.chkUseColor4Line); Anz(self.chkUseColor4Poly)
  
         Anz(self.btnStart) 
         Anz(self.btnReset)
         Anz(self.cbCharSet)
         Anz(self.button_box.button(QDialogButtonBox.Close))
-        Anz(self.browseDXFDatei);Anz(self.browseZielPfad)
+        Anz(self.browseDXFDatei);Anz(self.browseZielPfadOrDatei)
         Anz(self.listDXFDatNam);Anz(self.txtZielPfad)
         Anz(self.chkCol); Anz(self.chkLay); Anz(self.chkSHP)
         Anz(self.lbFaktor);Anz(self.txtFaktor)

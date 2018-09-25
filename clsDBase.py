@@ -2,6 +2,9 @@
 """
 /***************************************************************************
  clsDBase
+    Änderungen V1.1.0
+        Erweiterung auf GeoPackage
+        05.03.18: Fehler bei ":" in Texten beseitigt
     Änderungen V0.81.2:
         18.04.17 
             - Umsetzung: \fMS Shell Dlg 2|i0|b0;\H1.98441;265.0m
@@ -9,7 +12,7 @@
     Änderungen V0.81:
         03.03.17 
             - Untersteichung neben %%u jetzt auch %%U
-            - Fehlerbehandlung in DBFedit wieder aktiviert
+            - Fehlerbehandlung in attTableEdit wieder aktiviert
     
     Änderungen V0.7:
         21.02.17 
@@ -68,17 +71,21 @@ def tr( message):
     return QCoreApplication.translate('clsDXFTools', message)
     
 def ZahlTextSplit(zt):
-    z=""
-    t=""
-    isText = False
-    for c in zt:
-        if not c in "01234567890.":
-            isText=True
-        if isText:
-            t=t+c
-        else:
-            z=z+c
-    return float(z),t    
+    try:
+        z="";t="";f=-1
+        isText = False
+        for c in zt:
+            if not c in "01234567890.-":
+                isText=True
+            if isText:
+                t=t+c
+            else:
+                z=z+c
+        f=float(z)
+    except:
+        #print ("Fehler:",zt,z,t)
+        pass
+    return f,t  
 
 def fnctxtOGRtoQGIS(cArt):
     if cArt == 1:
@@ -123,7 +130,7 @@ def trennArtDaten(ArtDaten):
             sArt = sArt + c
     return sArt, sDaten
     
-def csvSplit(csvZeile, trenn=',', tKenn='"', tKennDel = True):
+def csvSplit(csvZeile, trenn=',', tKenn='"', tKennDel = True, bOnlyFirst = False):
     #csvZeile: Datenzeile 
     #trenn:    Feldtrenner
     #tKenn:    Textkennzeichen
@@ -156,7 +163,8 @@ def csvSplit(csvZeile, trenn=',', tKenn='"', tKennDel = True):
     if mask != "":
         for i in range(0,len(arr)):
             arr[i] = arr[i].replace(mask,trenn)
-
+    if bOnlyFirst and len(arr)>2:
+        arr=[arr[0],trenn.join(arr[1:])]
     return arr
 
 """  
@@ -276,20 +284,37 @@ def ShapeCodepage2Utf8 (OrgShpDat, TargetShpDat, OrgCodePage):
     oLayer.setProviderEncoding(OrgCodePage)
     oLayer.dataProvider().setEncoding(OrgCodePage)
     zLayer=QgsVectorFileWriter.writeAsVectorFormat(oLayer,TargetShpDat,TargetCodePage, oLayer.crs(), "ESRI Shapefile")
+    #print ("Von:" + OrgShpDat)
+    #print ("Nach:" + TargetShpDat)
+    #print ("Mit:" + OrgCodePage)
 
 
-def DBFedit (shpdat,bFormat,sCharSet):
-    #print (shpdat,bFormat,sCharSet)
+def attTableEdit (sOutForm, inpDat,bFormat,sCharSet,gpkgTable=None):
+    #print (inpDat,bFormat,sCharSet)
 
     if sCharSet == "System":
         sCharSet=locale.getdefaultlocale()[1]
 
-    source = ogr.Open(shpdat, update=True)
+    source = ogr.Open(inpDat, update=True)
     if source is None:
-        addFehler(tr('ogr: can not open: ') + shpdat)
+        addFehler(tr('ogr: can not open: ') + inpDat)
         return
-    layer = source.GetLayer()
+    
+    if sOutForm=="SHP":
+        layer = source.GetLayer()
+    else:
+        layer = source.GetLayerByName( gpkgTable )
+
+    if layer is None:
+        source.Destroy()
+        addFehler(tr('ogr: layer not found: ') + inpDat)
+        return
+        
     laydef = layer.GetLayerDefn()
+    if laydef is None:
+        source.Destroy()
+        addFehler(tr('ogr: laydef not found: ') + inpDat)
+        return
 
     Found = False
     for i in range(laydef.GetFieldCount()):
@@ -297,11 +322,11 @@ def DBFedit (shpdat,bFormat,sCharSet):
             Found = True
 
     if not Found:
-        addFehler(tr("missing field 'ogr_style': ") + shpdat)
+        addFehler(tr("missing field 'ogr_style': ") + inpDat)
         return
     
 
-    # scheinbar nur 10 Zeichen bei Feldnamen erlabt
+    # bei Shape nur 10 Zeichen bei Feldnamen erlabt
     layer.CreateField(ogr.FieldDefn('font', ogr.OFTString))
     layer.CreateField(ogr.FieldDefn('angle', ogr.OFTReal))    
     layer.CreateField(ogr.FieldDefn('size', ogr.OFTReal))
@@ -316,14 +341,14 @@ def DBFedit (shpdat,bFormat,sCharSet):
     layer.CreateField(ogr.FieldDefn('italic', ogr.OFTInteger))
 
     i=1
+    layer.StartTransaction()
     feature = layer.GetNextFeature()
     while feature:
-        # 03.03.17 Fehlerbehandlung wieder aktiviert
-        try:
+        if True: #try:
             TxtType = "UNDEF"
             SubClass = feature.GetField('SubClasses')
             if SubClass is None:
-                addHinweis(tr("missing field 'SubClasses' in: ") + shpdat)
+                addHinweis(tr("missing field 'SubClasses' in: ") + inpDat)
             else:
                 # AcDbEntity:AcDbMText
                 # AcDbEntity:AcDbText:AcDbText
@@ -332,19 +357,30 @@ def DBFedit (shpdat,bFormat,sCharSet):
                 if SubClass.find("AcDbText")>=0:
                     TxtType = "TEXT"
             att=feature.GetField('ogr_style') #http://www.gdal.org/ogr_feature_style.html
+          
+            try:
+                aktHandle=feature.GetField('EntityHand') # bei Shape gekürzt
+            except:
+                aktHandle=feature.GetField('EntityHandle') 
+                
             if att is None:
-                addHinweis(tr("missing field 'ogr_style' in: ") + shpdat)
+                addHinweis(tr("missing field 'ogr_style' in: ") + inpDat)
+            
+            elif att[-1] != ')':
+                addHinweis(tr("incomplete field 'ogr_style' at EntityHandle: ") + aktHandle) # +tryDecode(att,sCharSet))
+
             else:
                 sArt,sDaten = trennArtDaten(att)
                 #if att[:6] == "LABEL(":
                     #LABEL(f:"Arial",t:"%%c 0,40m",a:11,s:0.5g,c:#000000)
                     #print att
-
+                
                 params = csvSplit (sDaten)
                 for param in params:
-                    arr=csvSplit(param,":")
+                    #csvSplit(csvZeile, trenn=',', tKenn='"', tKennDel = True, bOnlyFirst = False):
+                    arr=csvSplit(param,":",None,None,True)
                     if len(arr) == 2:
-                        f = arr[0]
+                        f = arr[0] 
                         w = arr[1]
                         #print str(sArt),str(f),str(w)
                         if f == "c":
@@ -379,18 +415,30 @@ def DBFedit (shpdat,bFormat,sCharSet):
                     else:
                         # Text retten
                         #feature.SetField('plaintext', feature.GetField('Text'))
+                        # 05.03.18: Hier sollte jetzt nichts mehr ankommen
                         addFehler(tr("incomplete field 'ogr_style': ") + tryDecode(param,sCharSet))
                     
                     if sArt == "LABEL":
                         # der eigentlichen Text
                         AktText = feature.GetField('Text')
                         if AktText is None:
-                            addHinweis(tr('missing Text: ') + shpdat)
+                            addHinweis(tr('missing Text: ') + inpDat)
                         else:
+                            dummy=AktText
+                            AktText="";bDecodeError=False
+                            #https://github.com/OSGeo/gdal/issues/356
+                            for c in dummy:
+                                if ord(c) > 54000:
+                                    c="?"; bDecodeError=True
+                                AktText=AktText + c
+                            if bDecodeError:
+                                addFehler(tr("Wrong char in  'ogr_style' at EntityHandle: ") + aktHandle + tr(" (Check your choose charset)") + tryDecode(dummy,sCharSet)) 
+
                             # evtl. Formtierungen überschreiben
                             if bFormat:
                                 t,underline,font, FlNum, aktSize = splitText(AktText,TxtType)
                                 feature.SetField('plaintext', t)
+
                                 #print "xx",font
                                 if not aktSize is None:
                                     feature.SetField('size', aktSize)
@@ -410,14 +458,17 @@ def DBFedit (shpdat,bFormat,sCharSet):
                                 feature.SetField('underline', False)
                 layer.SetFeature(feature)
             feature = layer.GetNextFeature()
-        except:
+        else: #except:
             if att is None:
                 subLZF ()
             else:
                 subLZF ('ogr_style:' + att)
                 
             feature = layer.GetNextFeature()
+    layer.CommitTransaction()
     source.Destroy()
 
 if __name__ == "__main__":
-    fText=r'%%Uihghe%%U'
+    app = QApplication(sys.argv)
+    print (csvSplit('t:Abschn.:5346 019',":",None,None,True))
+    print ("fertig")

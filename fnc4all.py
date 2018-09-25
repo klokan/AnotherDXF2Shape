@@ -40,7 +40,8 @@ try:
     from PyQt5 import QtGui
     from PyQt5.QtCore import QSettings
     from PyQt5.QtWidgets import QApplication,QMessageBox
-
+    from configparser import ConfigParser
+    
     def myQGIS_VERSION_INT():
         return Qgis.QGIS_VERSION_INT
     myqtVersion = 5
@@ -49,6 +50,8 @@ except:
     from PyQt4 import QtGui
     from PyQt4.QtCore import QSettings
     from PyQt4.QtGui import QMessageBox,QApplication
+    from ConfigParser import ConfigParser
+    
     def myQGIS_VERSION_INT():
         return QGis.QGIS_VERSION_INT
     myqtVersion = 4
@@ -164,7 +167,14 @@ def resetHinweis() :
     global glHinweisListe
     glHinweisListe = [] 
 
+def fncPluginVersion():
+    config = ConfigParser()
+    config.read(os.path.join(os.path.dirname(__file__),'metadata.txt'))
 
+    #name        = config.get('general', 'name')
+    #description = config.get('general', 'description')
+    return config.get('general', 'version')
+    
 # unerwarteter LZF mit Sofortmeldung
 """ Aufruf per:
 except Exception as e:
@@ -375,7 +385,9 @@ def qXDatAbsolute2Relativ(tmpDat, qlrDat, PathAbsolute):
         os.remove(tmpDat)
         
 if __name__ == "__main__": 
-    print(tryDecode("param","cp1252"))
+    Haupt,Neben,Revision=fncPluginVersion().split(".")
+    print( int(Haupt) >= 1 and int(Neben) >= 1)
+    
     #if len(getFehler()) > 0:
     #    print("\n\n".join(getFehler()))  
     #tmpDat="X:/Downloaddienst/FnP/FnP-2.Entwurf.qlr"
