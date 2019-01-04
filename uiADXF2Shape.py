@@ -57,12 +57,12 @@ try:
     from .fnc4all import *
     from .fnc4ADXF2Shape import *
     from .clsDXFTools import DXFImporter
-    from .TransformTools import ReadWldDat
+    from .TransformTools import *
 except:
     from fnc4all import *
     from fnc4ADXF2Shape import *
     from clsDXFTools import DXFImporter
-    from TransformTools import ReadWldDat
+    from TransformTools import *
 
 
 
