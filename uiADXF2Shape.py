@@ -2,6 +2,7 @@
 """
 /***************************************************************************
  uiADXF2Shape
+    Stand 04.01.2019: Fehlerkorrektur: https://github.com/EZUSoft/AnotherDXF2Shape/issues/9
     Stand 31.07.2018: Einbau GeoPackage
     Stand 10.11.2017: Einheitliche Grundlage QT4/QT5
     Änderungen V0.9:
@@ -362,7 +363,7 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
     # Bei Fehler Rückgabe False und Fehlertext
     # sonst True und optional Punktliste p
         Feh = ""
-        p=[[],[],[]]
+        p=[[],[],[],[]] # 04.01.19 auf 4 erweitert
         # 1) Worldfile kontrollieren ---> erfolgt direkt beim Import, da mehrere Dateien (wld's) im Stapel sein können
         if self.optTWld.isChecked():
             return True, None
@@ -379,7 +380,10 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
                     if self.tabTPoints.item(row,col).text().strip() == "":
                         Feh = "(" + str(row+1) + "," + str(col+1) + ")" + self.tr(" value missing\n")
                         return False, Feh
-                p[row]=[[float(self.tabTPoints.item(row,0).text()),float(self.tabTPoints.item(row,1).text())],[float(self.tabTPoints.item(row,2).text()),float(self.tabTPoints.item(row,3).text())]]
+                p[row]=[[float(self.tabTPoints.item(row,0).text()), \
+                         float(self.tabTPoints.item(row,1).text())], \
+                        [float(self.tabTPoints.item(row,2).text()),\
+                         float(self.tabTPoints.item(row,3).text())]]
             # restliche Punkte per Helmert ermitteln
             if self.tabTPoints.rowCount() == 1:
                 # Punkte 2 und 3 ermitteln
@@ -387,6 +391,10 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
             if self.tabTPoints.rowCount() == 2:
                 # Punkt 3 ermitteln
                 p[0], p[1], p[2] = Helmert4Points(p[0],p[1])
+            
+            if self.tabTPoints.rowCount() != 4:
+                # Punkt 4 löschen
+                p=[p[0], p[1], p[2]]
             return True, p
         
         # 3) (Verschiebungs-) Parameter kontrollieren
