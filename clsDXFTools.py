@@ -2,6 +2,8 @@
 """
 /***************************************************************************
  clsDXFTools
+    Stand 27.02.2019: Anpassung an neues GDAL, welches standardmäßig %%-Formatierung schluckt
+                      --config DXF_TRANSLATE_ESCAPE_SEQUENCES  FALSE
     Stand 28.03.2018: Umstellung/Erweiterung auf GeoPackage
     
     Stand 28.03.2018: Fehler beim EditQML beseitigt
@@ -316,7 +318,9 @@ def ProjDaten4Dat(AktDXFDatNam, bCol, bLayer, bZielSave):
     pList1=("P:POINT:LIKE \'%POINT%\'",
     "L:LINESTRING:LIKE '%LINE%'",
     "F:POLYGON:LIKE \'%POLYGON%\'")
-    o1=" --config DXF_MERGE_BLOCK_GEOMETRIES FALSE --config DXF_INLINE_BLOCKS TRUE "
+    
+    # 27.02.19: --config DXF_TRANSLATE_ESCAPE_SEQUENCES FALSE
+    o1=" --config DXF_TRANSLATE_ESCAPE_SEQUENCES FALSE --config DXF_MERGE_BLOCK_GEOMETRIES FALSE --config DXF_INLINE_BLOCKS TRUE "
     
     pList2=("eP:POINT:LIKE \'%POINT%\'",
             "eL:LINESTRING:LIKE \'%LINE%\'",
@@ -325,7 +329,7 @@ def ProjDaten4Dat(AktDXFDatNam, bCol, bLayer, bZielSave):
             "cL:LINESTRING:= 'GEOMETRYCOLLECTION'",
             "cF:POLYGON:= 'GEOMETRYCOLLECTION'")
     # dim 2 (3D->2D): 3D Geometriecollections können nicht konvertiert werden 
-    o2=" --config DXF_MERGE_BLOCK_GEOMETRIES TRUE --config DXF_INLINE_BLOCKS TRUE -dim 2 "
+    o2=" --config DXF_TRANSLATE_ESCAPE_SEQUENCES FALSE --config DXF_MERGE_BLOCK_GEOMETRIES TRUE --config DXF_INLINE_BLOCKS TRUE -dim 2 "
     
     (dummy,ProjektName) = os.path.split(AktDXFDatNam)
     if bCol:
@@ -561,6 +565,7 @@ def EineDXF(uiParent, mLay_crs, bZielSave, sOutForm, grpProjekt,AktList, Kern, A
                 korrSHPDatNam=shpdat            
         
         bKonvOK=False
+
         try:
             if sOutForm == "SHP":
                 opt=  ('-skipfailure %s -nlt %s %s -sql "select *, ogr_style from entities where OGR_GEOMETRY %s"') % (AktOpt,v[1],optGCP,v[2])      
@@ -580,6 +585,7 @@ def EineDXF(uiParent, mLay_crs, bZielSave, sOutForm, grpProjekt,AktList, Kern, A
                     ogrCharSet=sCharSet
                 ogrCharSet=ogrCharSet.upper()              
                 
+
                 opt = '-append -update --config DXF_ENCODING "' + ogrCharSet + '" '
                 opt = opt + ('%s -nlt %s %s -sql "select *, ogr_style from entities where OGR_GEOMETRY %s" -nln %s ') % (AktOpt,v[1],optGCP,v[2], gpkgTable)      
                 #opt = opt + ' -s_srs EPSG:25833 -t_srs EPSG:25833 '
