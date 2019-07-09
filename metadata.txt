@@ -12,8 +12,11 @@ name=Another DXF Importer / DXF2Shape Converter
 qgisMinimumVersion=2.8
 qgisMaximumVersion=3.99
 description=Add DXF to QGIS , optional georeferencing, optional convert DXF to Shape
-version=1.0.6
-changelog=27.02.19 V1.0.6
+version=1.0.7
+changelog=09.07.19 V1.0.7
+    - Optional 3D
+    
+    27.02.19 V1.0.6
     - Fixed problem text formatting (%%) for new OGR version
     
     04.01.19 V1.0.5

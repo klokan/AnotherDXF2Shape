@@ -2,6 +2,7 @@
 """
 /***************************************************************************
  uiADXF2Shape
+    Stand 09.07.2019: Optional 3D
     Stand 04.01.2019: Fehlerkorrektur: https://github.com/EZUSoft/AnotherDXF2Shape/issues/9
     Stand 31.07.2018: Einbau GeoPackage
     Stand 10.11.2017: Einheitliche Grundlage QT4/QT5
@@ -234,6 +235,8 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
         self.browseDXFDatei.clicked.connect(self.browseDXFDatei_clicked)    
         self.browseZielPfadOrDatei.clicked.connect(self.browseZielPfadOrDatei_clicked) 
         self.chkSHP.clicked.connect(self.chkSHP_clicked)
+        
+        self.chk3D.clicked.connect(self.chk3D_clicked)
         
 
             
@@ -498,6 +501,10 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
         self.chkSHP.setChecked(bGenSHP)
         self.chkSHP_clicked()
         
+        bGen3D = True if s.value( "bGen3D", "Nein" ) == "Ja" else False
+        self.chk3D.setChecked(bGen3D)
+        self.chk3D_clicked()
+        
         # GeoPackage ab QGIS 3.0 und V1.1.0
         Haupt,Neben,Revision=fncPluginVersion().split(".")
         if myqtVersion == 5 and ( int(Haupt) >= 1 and int(Neben) >= 1): 
@@ -538,6 +545,10 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
         self.ManageTransformSettings()
         if self.chkTransform.isChecked():
             self.tabSetting.setCurrentIndex(1)
+    
+    def chk3D_clicked(self):
+        s = QSettings( "EZUSoft", fncProgKennung() )    
+        bGen3D=self.chk3D.isChecked()
         
     def chkSHP_clicked(self):
         if self.chkGPKG.isChecked():
@@ -559,6 +570,8 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
             self.txtZielPfad.setPlaceholderText("") 
             self.lbOutput.setText("") 
 
+
+    
     def chkGPKG_clicked(self):
         if self.chkSHP.isChecked():
             self.chkSHP.setChecked(False)
@@ -640,6 +653,7 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
         s.setValue( "bGenLay", "Ja" if self.chkLay.isChecked() == True else "Nein")
         s.setValue( "bGenSHP", "Ja" if self.chkSHP.isChecked() == True else "Nein")
         s.setValue( "bGenGPKG", "Ja" if self.chkGPKG.isChecked() == True else "Nein")
+        s.setValue( "bGen3D", "Ja" if self.chk3D.isChecked() == True else "Nein")
         s.setValue( "bFormatText", "Ja" if self.chkUseTextFormat.isChecked() == True else "Nein")
         s.setValue( "bUseColor4Point", "Ja" if self.chkUseColor4Point.isChecked() == True else "Nein")
         s.setValue( "bUseColor4Line", "Ja" if self.chkUseColor4Line.isChecked() == True else "Nein")
@@ -712,7 +726,7 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
         self.OptSpeichern()
         self.tabSetting.setCurrentIndex(0) # erste Registerkarte, damit Laufbalken sichtbar
         
-        Antw = DXFImporter (self, "SHP", self.listDXFDatNam, ZielPfad, self.chkSHP.isChecked(), self.cbCharSet.currentText(),self.chkCol.isChecked(),self.chkLay.isChecked(), self.chkUseTextFormat.isChecked(), self.chkUseColor4Point.isChecked(), self.chkUseColor4Line.isChecked(), self.chkUseColor4Poly.isChecked(), dblFaktor, self.chkTransform.isChecked(), DreiPassPunkte)
+        Antw = DXFImporter (self, "SHP", self.listDXFDatNam, ZielPfad, self.chkSHP.isChecked(), self.cbCharSet.currentText(),self.chkCol.isChecked(),self.chkLay.isChecked(), self.chkUseTextFormat.isChecked(), self.chkUseColor4Point.isChecked(), self.chkUseColor4Line.isChecked(), self.chkUseColor4Poly.isChecked(), dblFaktor, self.chkTransform.isChecked(), DreiPassPunkte, self.chk3D.isChecked())
         self.FormRunning(False) # nur sicherheitshalber, falls in DXFImporter übersprungen/vergessen
         
     

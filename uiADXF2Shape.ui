@@ -155,21 +155,28 @@
       </size>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tabDesign">
       <attribute name="title">
        <string>Drawing settings</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_6">
-       <item>
+      <layout class="QFormLayout" name="formLayout">
+       <item row="0" column="0">
         <widget class="QCheckBox" name="chkTransform">
          <property name="text">
           <string>Use coordinate transformation</string>
          </property>
         </widget>
        </item>
-       <item>
+       <item row="0" column="1">
+        <widget class="QCheckBox" name="chk3D">
+         <property name="text">
+          <string>Use 3D if possible</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0" colspan="2">
         <spacer name="verticalSpacer_3">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -182,7 +189,7 @@
          </property>
         </spacer>
        </item>
-       <item>
+       <item row="2" column="0" colspan="2">
         <layout class="QGridLayout" name="gridLayout_3" rowstretch="0,0">
          <item row="1" column="2">
           <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -238,7 +245,7 @@
          </item>
         </layout>
        </item>
-       <item>
+       <item row="3" column="0" colspan="2">
         <layout class="QGridLayout" name="gridLayout_6">
          <item row="1" column="2">
           <spacer name="horizontalSpacer_4">
@@ -374,7 +381,7 @@
          </item>
         </layout>
        </item>
-       <item>
+       <item row="4" column="0" colspan="2">
         <spacer name="verticalSpacer_4">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -391,6 +398,7 @@
       <zorder>chkTransform</zorder>
       <zorder>verticalSpacer_3</zorder>
       <zorder>verticalSpacer_4</zorder>
+      <zorder>chk3D</zorder>
      </widget>
      <widget class="QWidget" name="tabTransform">
       <attribute name="title">

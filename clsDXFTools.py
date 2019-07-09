@@ -2,6 +2,7 @@
 """
 /***************************************************************************
  clsDXFTools
+    Stand 09.07.2019: Optional 3D
     Stand 27.02.2019: Anpassung an neues GDAL, welches standardmäßig %%-Formatierung schluckt
                       --config DXF_TRANSLATE_ESCAPE_SEQUENCES  FALSE
     Stand 28.03.2018: Umstellung/Erweiterung auf GeoPackage
@@ -355,7 +356,7 @@ def ProjDaten4Dat(AktDXFDatNam, bCol, bLayer, bZielSave):
     
     return AktList,AktOpt,ProjektName, Kern
 
-def DXFImporter(uiParent, sOutForm, listDXFDatNam, zielPfadOrDatei, bZielSave, sCharSet,  bCol, bLayer, bFormatText, bUseColor4Point, bUseColor4Line, bUseColor4Poly, dblFaktor, chkTransform, DreiPassPunkte ):    
+def DXFImporter(uiParent, sOutForm, listDXFDatNam, zielPfadOrDatei, bZielSave, sCharSet,  bCol, bLayer, bFormatText, bUseColor4Point, bUseColor4Line, bUseColor4Poly, dblFaktor, chkTransform, DreiPassPunkte, bGen3D ):    
     # 23.02.17
     # Processing erst hier Laden, um den Start von QGIS zu beschleunigen
     import processing
@@ -480,7 +481,7 @@ def DXFImporter(uiParent, sOutForm, listDXFDatNam, zielPfadOrDatei, bZielSave, s
                     addFehler(wldDat + ": " + tr("file not found"))
                 
 
-            Antw = EineDXF (uiParent, mLay.crs(), bZielSave, sOutForm, grpProjekt, AktList, Kern, AktOpt, AktDXFDatNam, zielPfadOrDatei, qPrjDatName, sCharSet, bLayer, bFormatText, bUseColor4Point,bUseColor4Line,bUseColor4Poly, dblFaktor, okTransform, DreiPassPunkte)
+            Antw = EineDXF (uiParent, mLay.crs(), bZielSave, sOutForm, grpProjekt, AktList, Kern, AktOpt, AktDXFDatNam, zielPfadOrDatei, qPrjDatName, sCharSet, bLayer, bFormatText, bUseColor4Point,bUseColor4Line,bUseColor4Poly, dblFaktor, okTransform, DreiPassPunkte, bGen3D)
     # Ausgangswerte wieder herstellen
     QSettings().setValue(crsRegParam4NewLayer,crsArt)
     QSettings().setValue('/Projections/layerDefaultCrs',crsDefWert)
@@ -494,7 +495,7 @@ def DXFImporter(uiParent, sOutForm, listDXFDatNam, zielPfadOrDatei, bZielSave, s
     
     uiParent.FormRunning(False)
         
-def EineDXF(uiParent, mLay_crs, bZielSave, sOutForm, grpProjekt,AktList, Kern, AktOpt, DXFDatNam, zielPfadOrDatei, qPrjDatName, sOrgCharSet, bLayer, bFormatText, bUseColor4Point,bUseColor4Line,bUseColor4Poly, dblFaktor,chkTransform, DreiPassPunkte):
+def EineDXF(uiParent, mLay_crs, bZielSave, sOutForm, grpProjekt,AktList, Kern, AktOpt, DXFDatNam, zielPfadOrDatei, qPrjDatName, sOrgCharSet, bLayer, bFormatText, bUseColor4Point,bUseColor4Line,bUseColor4Poly, dblFaktor,chkTransform, DreiPassPunkte, bGen3D):
     # 23.02.17
     # Processing erst hier Laden, um den Start von QGIS zu beschleunigen
     import processing
@@ -569,6 +570,8 @@ def EineDXF(uiParent, mLay_crs, bZielSave, sOutForm, grpProjekt,AktList, Kern, A
         try:
             if sOutForm == "SHP":
                 opt=  ('-skipfailure %s -nlt %s %s -sql "select *, ogr_style from entities where OGR_GEOMETRY %s"') % (AktOpt,v[1],optGCP,v[2])      
+                if bGen3D:
+                    opt = opt +  ' -dim 3'
                 hinweislog ('convertformat'+','+korrDXFDatNam +','+ '0'+','+ opt +','+ '"' + korrSHPDatNam + '"') 
                 if myqtVersion == 4:
                     pAntw=processing.runalg('gdalogr:convertformat',korrDXFDatNam , 0, opt , korrSHPDatNam)
@@ -576,6 +579,7 @@ def EineDXF(uiParent, mLay_crs, bZielSave, sOutForm, grpProjekt,AktList, Kern, A
                     # das zu erzeugende Ausgabeformat wird über die Dateiendung definiert 
                     pList={'INPUT':korrDXFDatNam,'OPTIONS':opt,'OUTPUT': korrSHPDatNam}
                     pAntw=processing.run('gdal:convertformat',pList) 
+
                 if os.path.exists(korrSHPDatNam): bKonvOK = True
             else:
                 # nur für QGIS 3.x definiert
