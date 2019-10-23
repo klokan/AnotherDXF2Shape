@@ -1,18 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-  09.01.2018: alle PlugIn's abgeglichen
-
 /***************************************************************************
- fnc4CaigosConnector: Gemeinsame Basis für QGIS2 und QGIS3
-                                 A QGIS plugin
- CAIGOS-PostgreSQL/PostGIS in QGIS darstellen
-                              -------------------
-        begin                : 2016-04-18
-        git sha              : $Format:%H$
-        copyright            : (C) 2016 by EZUSoft
+ A QGIS plugin
+AnotherDXF2Shape: Convert DXF to shape and add to QGIS
+        copyright            : (C) 2019 by EZUSoft
         email                : qgis (at) makobo.de
  ***************************************************************************/
-
 /***************************************************************************
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -22,6 +15,15 @@
  *                                                                         *
  ***************************************************************************/
 """
+
+
+
+
+
+
+
+
+import sys
 try:
     from fnc4all import *
 
@@ -36,7 +38,10 @@ def fncProgVersion():
     return "V " + fncPluginVersion()
     
 def fncDebugMode(): 
-    return True
+    if (os.path.exists(os.path.dirname(__file__) + '/00-debug.txt')): 
+        return True
+    else:
+        return False
 
 def fncBrowserID():
     s = QSettings( "EZUSoft", fncProgKennung() )
@@ -44,16 +49,38 @@ def fncBrowserID():
     return s.value( "–id–", "" ) 
     
 def tr( message):
-    return message  # hier braucht es keine Übersetzung
+    return message  
     
 def fncCGFensterTitel(intCG = None):
     s = QSettings( "EZUSoft", fncProgKennung() )
     sVersion = "-"
 
     return u"Another DXF Import/Converter " + sVersion + "   (PlugIn Version: " + fncProgVersion() + ")" 
-    
+
+def DecodeDXFUTF(aktText):
+    if sys.version[0] == "2":
+
+        print ('hier')
+        return aktText
+
+    a=""
+    s=aktText
+    while (s.upper().find('\\U+') != -1):
+        p=s.upper().find('\\U+')
+        a = a + s[0:p] 
+        u=s[p+3:p+7] 
+        b=bytearray.fromhex(u) 
+        a= a + b.decode("UTF-16-BE")
+        s=s[s.upper().find('\\U+')+7:]
+
+
+    return (a + s)    
 if __name__ == "__main__": 
+    import sys
+    print(sys.version)
     print (fncProgVersion())
+    print (fncDebugMode())
+    print (DecodeDXFUTF('\\U+00f6'))
     pass
 
 

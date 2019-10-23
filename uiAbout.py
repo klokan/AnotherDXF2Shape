@@ -1,16 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- uiAbout
-                                 A QGIS plugin
- CAIGOS-PostgreSQL/PostGIS in QGIS darstellen
-                              -------------------
-        begin                : 2016-04-18
-        git sha              : $Format:%H$
-        copyright            : (C) 2016 by EZUSoft
+ A QGIS plugin
+AnotherDXF2Shape: Convert DXF to shape and add to QGIS
+        copyright            : (C) 2019 by EZUSoft
         email                : qgis (at) makobo.de
  ***************************************************************************/
-
 /***************************************************************************
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -20,6 +15,11 @@
  *                                                                         *
  ***************************************************************************/
 """
+
+
+
+
+
 
 
 from qgis.utils import os, sys
@@ -51,13 +51,13 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class uiAbout(QDialog, FORM_CLASS):  
     def __init__(self, parent=None):
-        """Constructor."""
+
         super(uiAbout, self).__init__(parent)
-        # Set up the user interface from Designer.
-        # After setupUI you can access any designer object by doing
-        # self.<objectname>, and you can use autoconnect slots - see
-        # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
-        # #widgets-and-dialogs-with-auto-connect
+
+
+
+
+
         self.setupUi(self)
 
         s=self.lblLink.text()
@@ -72,9 +72,9 @@ class uiAbout(QDialog, FORM_CLASS):
         self.lblLink.setText(s)
   
 if __name__ == "__main__":
-    # zur zum lokalen testen
+
     dummy=0
-    #s = QSettings( "EZUSoft", fncProgKennung() )
-    #print str(s.value("SaveWidth", "0"))
-    #print int(s.value("SaveWidth", "0"))
+
+
+
 

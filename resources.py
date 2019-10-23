@@ -1,10 +1,28 @@
 # -*- coding: utf-8 -*-
+"""
+/***************************************************************************
+ A QGIS plugin
+AnotherDXF2Shape: Convert DXF to shape and add to QGIS
+        copyright            : (C) 2019 by EZUSoft
+        email                : qgis (at) makobo.de
+ ***************************************************************************/
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+"""
 
-# Resource object code
-#
-# Created by: The Resource Compiler for PyQt5 (Qt v5.9.2)
-#
-# WARNING! All changes made in this file will be lost!
+
+
+
+
+
+
+
 
 from PyQt5 import QtCore
 

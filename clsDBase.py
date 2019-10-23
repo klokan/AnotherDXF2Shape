@@ -1,34 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- clsDBase
-    Änderungen V1.1.0
-        Erweiterung auf GeoPackage
-        05.03.18: Fehler bei ":" in Texten beseitigt
-    Änderungen V0.81.2:
-        18.04.17 
-            - Umsetzung: \fMS Shell Dlg 2|i0|b0;\H1.98441;265.0m
-              \H1.98441 heraus plaintext und "size" setzen
-    Änderungen V0.81:
-        03.03.17 
-            - Untersteichung neben %%u jetzt auch %%U
-            - Fehlerbehandlung in attTableEdit wieder aktiviert
-    
-    Änderungen V0.7:
-        21.02.17 
-            - Kodierungsprobleme beseitigt
-        13.12.16
-            - Ersterstellung
-            
-                                 A QGIS plugin
- Konvert DXF to shape and add to QGIS
-                             -------------------
-        begin                : 2016-06-20
-        git sha              : $Format:%H$
-        copyright            : (C) 2016 by Mike Blechschmidt EZUSoft 
-        email                : qgis@makobo.de
+ A QGIS plugin
+AnotherDXF2Shape: Convert DXF to shape and add to QGIS
+        copyright            : (C) 2019 by EZUSoft
+        email                : qgis (at) makobo.de
  ***************************************************************************/
-
 /***************************************************************************
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -38,6 +15,40 @@
  *                                                                         *
  ***************************************************************************/
 """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 from osgeo import ogr
 
@@ -57,17 +68,17 @@ import locale
 
     
 def tr( message):
-    """Get the translation for a string using Qt translation API.
 
-    We implement this ourselves since we do not inherit QObject.
 
-    :param message: String for translation.
-    :type message: str, QString
 
-    :returns: Translated version of message.
-    :rtype: QString
-    """
-    # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
+
+
+
+
+
+
+
+
     return QCoreApplication.translate('clsDXFTools', message)
     
 def ZahlTextSplit(zt):
@@ -83,7 +94,7 @@ def ZahlTextSplit(zt):
                 z=z+c
         f=float(z)
     except:
-        #print ("Fehler:",zt,z,t)
+
         pass
     return f,t  
 
@@ -106,7 +117,7 @@ def fnctxtOGRtoQGIS(cArt):
         return 7 
     if cArt == 9:
         return 6 
-    # 10-13 (ganz unten) ist mit QGIS nicht darstellbar, deshalb auf unten setzen
+
     if cArt == 10:
         return 2 
     if cArt == 11:
@@ -115,8 +126,8 @@ def fnctxtOGRtoQGIS(cArt):
         return 0  
         
 def trennArtDaten(ArtDaten):
-    #BRUSH(fc:#dcdcdc)
-    #LABEL(f:"Arial",t:"{\fArial|b1|i0|c0|p34;VZOG}",s:3.5g,p:8,c:#ff7f7f)
+
+
     sDaten = ""
     sArt = ""
     inDaten = False
@@ -131,11 +142,11 @@ def trennArtDaten(ArtDaten):
     return sArt, sDaten
     
 def csvSplit(csvZeile, trenn=',', tKenn='"', tKennDel = True, bOnlyFirst = False):
-    #csvZeile: Datenzeile 
-    #trenn:    Feldtrenner
-    #tKenn:    Textkennzeichen
+
+
+
     
-    #Trenner innerhalb von Freitexten ersetzen
+
 
     inString = False
     mask = ""
@@ -167,89 +178,88 @@ def csvSplit(csvZeile, trenn=',', tKenn='"', tKennDel = True, bOnlyFirst = False
         arr=[arr[0],trenn.join(arr[1:])]
     return arr
 
-"""  
-def delFormatKenn(aktText):
-    # 01.03.2018 Variante, dass der Text aus der Textspalte und nicht aus der ogr_style Spalte genommen wird
-    #   -> gleiche Funktionalität wie in splitText
-    aktText = aktText.replace('%%c','Ø').replace('%%C','Ø')
-    aktText = aktText.replace('%%u','').replace('%%U','')
-    # muss irgendwann mal mit erledigt werden
-    # aktText = aktText.replace('%%220','Ü')
-    return aktText    
-"""
+
+        
 def splitText (fText,TxtType):
-    #http://docs.autodesk.com/ACD/2010/ENU/AutoCAD%202010%20User%20Documentation/index.html?url=WS1a9193826455f5ffa23ce210c4a30acaf-63b9.htm,topicNumber=d0e123454
-    # V1: %%u1106                                   # TEXT  unterstrichender Text aus Caigos
-    # V2: {\fArial|b0|i1|c0|p34;\L151}              # MTEXT unterstrichender Text  vom LVA
-    # V3: \fTimes New Roman|i1|b0;Rue Presles       # MTEXT Datei PONT A CELLES 2010.dxf von pierre.mariemont
-    # V4: \S558/15;                                 # MTEXT komplette gebrochene Flurstücksnummer (Geograf)
-    # V5: \fMS Shell Dlg 2|i0|b0;\H1.98441;265.0m   # MTEXT aus QGIS selbst (Höhenlinien beschritet)
-    # ob Text oder MTEXT kann im Moment nicht immer unterschieden werden
+
+
+
+
+
+
+
+
 
     underline = False
     bs = False
     uText = r""
     ignor = False
     font = ""
+    color = ""
     delSemi = False
     inFont = False
+    inColor = False
     inHText = False
     aktText=fText
     FlNum = False
     aktSize = None
     
     if TxtType == "TEXT" or TxtType == "UNDEF":
-        # 1. Formatierungen TEXT
-        #    Die Codes sind nirgends definiert
-        # %%u entfernen und ggf. underline setzen
-        # 03.03.17: in Geograf scheint man (auch) ein großes U zu nutzen
+
+
+
+
         if "%%u".upper() in aktText.upper():
             underline=True
             aktText = aktText.replace('%%u','').replace('%%U','')
-        # %%c ist Ø
-        aktText = aktText.replace('%%c','Ø') # geht nur bei Unicode als Zeichensatz, hier muss noch irgendwas getan werden
+
+        aktText = aktText.replace('%%c','Ø') 
     
     if TxtType == "MTEXT" or TxtType == "UNDEF":
-        # 2. Formatierungen MTEXT
+        aktText=DecodeDXFUTF(aktText)
+
         for c in aktText:
-            # Kennungen mit nachfolgendem Zeichen, welche OGR  nicht auswertet
-            if bs and c.upper() == 'H': # 12.04.17 ignorieren Höhe
+
+            if bs and c.upper() == 'H': 
                 c=''
                 ignor = True
                 inHText = True 
                 delSemi = True
-            if bs and c.upper() == 'O': # ignorieren Overline on/off
+            if bs and c.upper() == 'O': 
                 c=''
                 ignor = True
-            if bs and c.upper() == 'L': # underline on/off: only for all
+            if bs and c.upper() == 'L': 
                 c=''
                 underline = True
                 ignor = True
-            if bs and c == 'S': # Stacks the subsequent text at the /, #, or ^ symbol: aktuell nur \S und Semikolon entfernen
+            if bs and c == 'S': 
                 c=''
                 ignor = True
                 delSemi = True
                 FlNum = True
 
-            if bs and c.upper() == 'F': # \Ffont name; Changes to the specified font file 
+            if bs and c.upper() == 'F': 
                 ignor = True
                 inFont = True 
                 delSemi = True
+            
+            if bs and c.upper() == 'C': 
+                ignor = True
+                inColor = True 
+                delSemi = True
+
+            if bs and c.upper() == 'P': 
+                ignor = True
+                c="\n"  
                 
             if c == ';' and delSemi:
                 c= ''
                 inFont=False
+                inColor=False
                 inHText=False
                 delSemi = False
-            # filtert OGR bereits
-            #if bs and c.upper() == '~': # nonbreaking space: to space
-            #    c=' '
-            #    ignor = True
-            #if bs and c == 'P': # Ends paragraph: to \n
-            #    c='\n'
-            #    ignor = True    
             
-            if not bs and (c == '{' or c == '}'): # nur für Formatierung
+            if not bs and (c == '{' or c == '}'): 
                 c = ''
             else:
                 ignor = True
@@ -262,19 +272,22 @@ def splitText (fText,TxtType):
                 if inFont:
                     font = font + c
                 else:
-                    if inHText:
-                        if aktSize is None:
-                            aktSize = c
-                        else:
-                            aktSize = aktSize + c
+                    if inColor:
+                        color = color + c
                     else:
-                        uText = uText  + c
+                        if inHText:
+                            if aktSize is None:
+                                aktSize = c
+                            else:
+                                aktSize = aktSize + c
+                        else:
+                            uText = uText  + c
                 bs = False
             ignor = False
         aktText = uText
-    return aktText, underline, font, FlNum, aktSize
+    return aktText, underline, font, FlNum, aktSize, color
  
-#print splitText(r'%%u1144',"TEXT")    
+
 def ShapeCodepage2Utf8 (OrgShpDat, TargetShpDat, OrgCodePage):
     TargetCodePage="utf8"
     if OrgCodePage == "System":
@@ -284,13 +297,13 @@ def ShapeCodepage2Utf8 (OrgShpDat, TargetShpDat, OrgCodePage):
     oLayer.setProviderEncoding(OrgCodePage)
     oLayer.dataProvider().setEncoding(OrgCodePage)
     zLayer=QgsVectorFileWriter.writeAsVectorFormat(oLayer,TargetShpDat,TargetCodePage, oLayer.crs(), "ESRI Shapefile")
-    #print ("Von:" + OrgShpDat)
-    #print ("Nach:" + TargetShpDat)
-    #print ("Mit:" + OrgCodePage)
+
+
+
 
 
 def attTableEdit (sOutForm, inpDat,bFormat,sCharSet,gpkgTable=None):
-    #print (inpDat,bFormat,sCharSet)
+
 
     if sCharSet == "System":
         sCharSet=locale.getdefaultlocale()[1]
@@ -326,7 +339,7 @@ def attTableEdit (sOutForm, inpDat,bFormat,sCharSet,gpkgTable=None):
         return
     
 
-    # bei Shape nur 10 Zeichen bei Feldnamen erlabt
+
     layer.CreateField(ogr.FieldDefn('font', ogr.OFTString))
     layer.CreateField(ogr.FieldDefn('angle', ogr.OFTReal))    
     layer.CreateField(ogr.FieldDefn('size', ogr.OFTReal))
@@ -344,22 +357,22 @@ def attTableEdit (sOutForm, inpDat,bFormat,sCharSet,gpkgTable=None):
     layer.StartTransaction()
     feature = layer.GetNextFeature()
     while feature:
-        if True: #try:
+        if True: 
             TxtType = "UNDEF"
             SubClass = feature.GetField('SubClasses')
             if SubClass is None:
                 addHinweis(tr("missing field 'SubClasses' in: ") + inpDat)
             else:
-                # AcDbEntity:AcDbMText
-                # AcDbEntity:AcDbText:AcDbText
+
+
                 if SubClass.find("AcDbMText")>=0:
                     TxtType = "MTEXT" 
                 if SubClass.find("AcDbText")>=0:
                     TxtType = "TEXT"
-            att=feature.GetField('ogr_style') #http://www.gdal.org/ogr_feature_style.html
+            att=feature.GetField('ogr_style') 
           
             try:
-                aktHandle=feature.GetField('EntityHand') # bei Shape gekürzt
+                aktHandle=feature.GetField('EntityHand') 
             except:
                 aktHandle=feature.GetField('EntityHandle') 
                 
@@ -367,26 +380,27 @@ def attTableEdit (sOutForm, inpDat,bFormat,sCharSet,gpkgTable=None):
                 addHinweis(tr("missing field 'ogr_style' in: ") + inpDat)
             
             elif att[-1] != ')':
-                addHinweis(tr("incomplete field 'ogr_style' at EntityHandle: ") + aktHandle) # +tryDecode(att,sCharSet))
+                print (att)
+                addHinweis(tr("incomplete field 'ogr_style' at EntityHandle: ") + str(aktHandle)) 
 
             else:
                 sArt,sDaten = trennArtDaten(att)
-                #if att[:6] == "LABEL(":
-                    #LABEL(f:"Arial",t:"%%c 0,40m",a:11,s:0.5g,c:#000000)
-                    #print att
+
+
+
                 
                 params = csvSplit (sDaten)
                 for param in params:
-                    #csvSplit(csvZeile, trenn=',', tKenn='"', tKennDel = True, bOnlyFirst = False):
+
                     arr=csvSplit(param,":",None,None,True)
                     if len(arr) == 2:
                         f = arr[0] 
                         w = arr[1]
-                        #print str(sArt),str(f),str(w)
+
                         if f == "c":
                             feature.SetField('color', w)
                         if f == "fc":
-                            # Schwarz als Füllung mach meist keinen Sinn
+
                             if w == "#000000": w="#ffffff"
                             feature.SetField('fcolor', w)
                         if f == "f":
@@ -394,39 +408,39 @@ def attTableEdit (sOutForm, inpDat,bFormat,sCharSet,gpkgTable=None):
                         if f == "a":
                             dWin = float(w)
                             if dWin >=360:
-                                dWin = dWin - 360 # ogr bringt teilweise Winkel von 360 Grad, was funktioniert, aber verwirrt                               
+                                dWin = dWin - 360 
                             feature.SetField('angle', dWin)
                         if f == "p":
                             if sArt == "LABEL":
                                 feature.SetField('anchor', fnctxtOGRtoQGIS(int(w)))
                         if f == "s":
                             z,t=ZahlTextSplit(w)
-                            # Size_u wird im Moment nicht weiter ausgewertet,
-                            # da bei DXF wohl nur g = Karteneinheiten möglich
+
+
                             feature.SetField('size', z)
                             feature.SetField('size_u', t)
                         if f == "t":
-                            # den eigentlichen Text, doch besser aus der Textspalte (z.B. wegen 254 Zeichengrenze)
-                            #t,underline=splitText(w)
-                            #feature.SetField('plaintext', t)
-                            #feature.SetField('underline', underline)
+
+
+
+
                             dummy = 1
 
                     else:
-                        # Text retten
-                        #feature.SetField('plaintext', feature.GetField('Text'))
-                        # 05.03.18: Hier sollte jetzt nichts mehr ankommen
+
+
+
                         addFehler(tr("incomplete field 'ogr_style': ") + tryDecode(param,sCharSet))
                     
                     if sArt == "LABEL":
-                        # der eigentlichen Text
+
                         AktText = feature.GetField('Text')
                         if AktText is None:
                             addHinweis(tr('missing Text: ') + inpDat)
                         else:
                             dummy=AktText
                             AktText="";bDecodeError=False
-                            #https://github.com/OSGeo/gdal/issues/356
+
                             for c in dummy:
                                 if ord(c) > 54000:
                                     c="?"; bDecodeError=True
@@ -434,15 +448,21 @@ def attTableEdit (sOutForm, inpDat,bFormat,sCharSet,gpkgTable=None):
                             if bDecodeError:
                                 addFehler(tr("Wrong char in  'ogr_style' at EntityHandle: ") + aktHandle + tr(" (Check your choose charset)") + tryDecode(dummy,sCharSet)) 
 
-                            # evtl. Formtierungen überschreiben
-                            if bFormat:
-                                t,underline,font, FlNum, aktSize = splitText(AktText,TxtType)
-                                feature.SetField('plaintext', t)
 
-                                #print "xx",font
+                            if bFormat:
+                                t,underline,font, FlNum, aktSize, color = splitText(AktText,TxtType)
+                                feature.SetField('plaintext', t)
+                               
                                 if not aktSize is None:
                                     feature.SetField('size', aktSize)
-                                if not font is None:
+                                
+                                if (color != ""):
+                                    color=hex(int(color[1:])).replace('0x','#')  
+                                    feature.SetField('color',color)                                    
+                                
+
+
+                                if (font != ""):
                                     afont = font.split('|')
                                     for p in afont:
                                         if p[:1] == 'f':
@@ -458,7 +478,7 @@ def attTableEdit (sOutForm, inpDat,bFormat,sCharSet,gpkgTable=None):
                                 feature.SetField('underline', False)
                 layer.SetFeature(feature)
             feature = layer.GetNextFeature()
-        else: #except:
+        else: 
             if att is None:
                 subLZF ()
             else:
@@ -469,6 +489,20 @@ def attTableEdit (sOutForm, inpDat,bFormat,sCharSet,gpkgTable=None):
     source.Destroy()
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    print (csvSplit('t:Abschn.:5346 019',":",None,None,True))
-    print ("fertig")
+    def DecodeDXFUTF(aktText):
+
+        a=""
+        s=aktText
+        while (s.upper().find('\\U+') != -1):
+            p=s.upper().find('\\U+')
+            a = a + s[0:p] 
+            u=s[p+3:p+7] 
+            b=bytearray.fromhex(u) 
+            a= a + b.decode("UTF-16-BE")
+            s=s[s.upper().find('\\U+')+7:]
+
+
+        return (a + s)
+    print (DecodeDXFUTF (''))
+
+

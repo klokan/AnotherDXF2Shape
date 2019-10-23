@@ -1,37 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
- uiADXF2Shape
-    Stand 09.07.2019: Optional 3D
-    Stand 04.01.2019: Fehlerkorrektur: https://github.com/EZUSoft/AnotherDXF2Shape/issues/9
-    Stand 31.07.2018: Einbau GeoPackage
-    Stand 10.11.2017: Einheitliche Grundlage QT4/QT5
-    Änderungen V0.9:
-        Georeferenzieruzngsmodul
-    Änderungen V0.6:
-        17.02.17
-            - keine Anpassung der Fenstergröße in Abhängigkeit der Dateianzahl,
-              da das auf UHD/4K ohnehin nicht passt
-            - speichern der letzten Dialoggröße und Wiederherstellung bei Neustart
-            - Einbau Resetknopf für Standardvoreinstellungen
-            
-    Änderungen V0.4:
-        23.11.16:
-            - Stapelimport integriert
-            - Textformatierungen optional umsetzen
-            
-    Änderungen V0.3:
-        06.07.16:
-            - OGR-Version anzeigen
-                                 A QGIS plugin
- KonverDXF to shape and add to QGIS
-                             -------------------
-        begin                : 2016-06-20
-        git sha              : $Format:%H$
-        copyright            : (C) 2016 by Mike Blechschmidt EZUSoft 
-        email                : qgis@makobo.de
+ A QGIS plugin
+AnotherDXF2Shape: Convert DXF to shape and add to QGIS
+        copyright            : (C) 2019 by EZUSoft
+        email                : qgis (at) makobo.de
  ***************************************************************************/
-
 /***************************************************************************
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -41,6 +15,32 @@
  *                                                                         *
  ***************************************************************************/
 """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 try:
     from PyQt5 import QtCore, QtGui, QtWidgets
     from qgis.utils import os, sys
@@ -68,7 +68,7 @@ except:
 
 
 
-# Programm funktioniert auch ohne installierte gdal-Bibliothek, die Bibo wird nur zur Anzeige der Version genommen
+
 try:
    import gdal
 except:
@@ -78,32 +78,32 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'uiADXF2Shape.ui'))
 
 
-"""
-    23.11.16: D&D deaktiviert
-class QLineEditDropHandler(QObject):
 
-    def __init__(self, parent=None):
-        QObject.__init__(self, parent)
 
-    def eventFilter(self, obj, event):
-        if event.type() == QEvent.DragEnter:
-            # we need to accept this event explicitly to be able to receive QDropEvents!
-            event.accept()
-        if event.type() == QEvent.Drop:
-            md = event.mimeData()
-            if md.hasUrls():
-                for url in md.urls():
-                    # D&D von Serverdateien (ohne LW) funktioniert nicht - Problem ignoriert
-                    # Pfad für Windows korrigieren, da dieser immer mit "/" beginnt
-                    # /D:/Testdaten/ALKIS_Testdaten_Hessen.dxf
-                    if url.path()[0:1] == "/" and url.path()[2:3]==":":
-                       obj.setText(url.path()[1:]) 
-                    else:
-                        obj.setText(url.path())
-                    break
-            event.accept()
-        return QObject.eventFilter(self, obj, event)
-"""        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class uiADXF2Shape(QDialog, FORM_CLASS):
     charsetList = ["System",
@@ -201,12 +201,12 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
      "utf_8",
      "utf_8_sig"]
     def __init__(self, parent=None):
-        """Constructor."""
+
         super(uiADXF2Shape, self).__init__(parent)
         
-        # initialize plugin directory
+
         self.plugin_dir = os.path.dirname(__file__)
-        # initialize locale
+
         locale= QSettings().value('locale/userLocale')
         if locale is None or locale == NULL:
             locale = 'en'
@@ -225,11 +225,11 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
                 QCoreApplication.installTranslator(translator)
 
         
-        # Set up the user interface from Designer.
-        # After setupUI you can access any designer object by doing
-        # self.<objectname>, and you can use autoconnect slots - see
-        # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
-        # #widgets-and-dialogs-with-auto-connect
+
+
+
+
+
         self.setupUi(self)
         self.setWindowTitle (fncCGFensterTitel())
         self.browseDXFDatei.clicked.connect(self.browseDXFDatei_clicked)    
@@ -251,7 +251,7 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
         self.tabTPoints.cellChanged.connect(self.KorrAktTableValue)
         self.leTXOff.editingFinished.connect(self.KorrAktParam_leTXOff)
         self.leTYOff.editingFinished.connect(self.KorrAktParam_leTYOff)
-        # self.leTScale.editingFinished.connect(self.KorrAktParam_leTScale) """ Funktion aktuell entfernt
+
         
         self.optTWld.clicked.connect(self.ManageTransformSettings) 
         self.optTWld.setChecked (True)
@@ -273,25 +273,25 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
         self.listDXFDatNam.setEnabled(False)  
         self.listEmpty=listEmpty
         self.FormRunning(False)
-    # noinspection PyMethodMayBeStatic
+
     
     def tr(self, message):
-        """Get the translation for a string using Qt translation API.
 
-        We implement this ourselves since we do not inherit QObject.
 
-        :param message: String for translation.
-        :type message: str, QString
 
-        :returns: Translated version of message.
-        :rtype: QString
-        """
-        # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
+
+
+
+
+
+
+
+
         return QCoreApplication.translate('uiADXF2Shape', message)
     
     def wld4listDXFDatNam (self):
         if self.chkTransform.isChecked() and self.optTWld.isChecked():
-            # nur wenn Worldfile aktiv ist
+
             if self.listDXFDatNam.currentItem() == None:
                 AktDxfDatNam = self.listDXFDatNam.item(0).text()
             else:
@@ -339,7 +339,7 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
                 except:
                     msgbox (self.tr("There is no float value"))
                     dblValue=""
-                    self.tabTPoints.scrollToItem(self.tabTPoints.currentItem()) # funktioniert nicht
+                    self.tabTPoints.scrollToItem(self.tabTPoints.currentItem()) 
                 self.tabTPoints.currentItem().setText(str(dblValue))
 
     def KorrAktParam_leTXOff (self):
@@ -363,19 +363,19 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
 
     
     def CheckKonstTransWerte(self):
-    # Bei Fehler Rückgabe False und Fehlertext
-    # sonst True und optional Punktliste p
+
+
         Feh = ""
-        p=[[],[],[],[]] # 04.01.19 auf 4 erweitert
-        # 1) Worldfile kontrollieren ---> erfolgt direkt beim Import, da mehrere Dateien (wld's) im Stapel sein können
+        p=[[],[],[],[]] 
+
         if self.optTWld.isChecked():
             return True, None
         
-        # 2) Tabellenwerte kontrollieren
+
         if  self.optTPoint.isChecked():
-            # kein Tabellenfeld darf ohne Wert sein
+
             for row in range(self.tabTPoints.rowCount()):
-                for col in range(self.tabTPoints.columnCount()): # 0-3
+                for col in range(self.tabTPoints.columnCount()): 
                     if self.tabTPoints.item(row,col) == None:
                         Feh = "(" + str(row+1) + "," + str(col+1) + ")" + self.tr(" value missing\n")
                         return False, Feh
@@ -387,22 +387,22 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
                          float(self.tabTPoints.item(row,1).text())], \
                         [float(self.tabTPoints.item(row,2).text()),\
                          float(self.tabTPoints.item(row,3).text())]]
-            # restliche Punkte per Helmert ermitteln
+
             if self.tabTPoints.rowCount() == 1:
-                # Punkte 2 und 3 ermitteln
+
                 p[0], p[1], p[2] = Helmert4Points(p[0], None)
             if self.tabTPoints.rowCount() == 2:
-                # Punkt 3 ermitteln
+
                 p[0], p[1], p[2] = Helmert4Points(p[0],p[1])
             
             if self.tabTPoints.rowCount() != 4:
-                # Punkt 4 löschen
+
                 p=[p[0], p[1], p[2]]
             return True, p
         
-        # 3) (Verschiebungs-) Parameter kontrollieren
+
         if  self.optTParam.isChecked():
-            # Verschiebung immer
+
             if self.leTXOff.text() == "":
                 Feh = Feh  + self.tr("X-Offset - value missing\n")
                 return False, Feh
@@ -410,60 +410,60 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
                 Feh = Feh  + self.tr("Y-Offset - value missing\n")  
                 return False, Feh
 
-            # beliebige Punkte
+
             xOffs=float(self.leTXOff.text())
             yOffs=float(self.leTYOff.text())
             p[0]=[[0.0,0.0],[0.0+xOffs,0.0+yOffs]]
             p[1]=[[1000.0,0.0],[1000.0+xOffs,0.0+yOffs]]
             p[2]=[[0.0,1000.0],[0.0+xOffs,1000.0+yOffs]]
-            """ aktuell nicht realisiert
-            if self.cbTArt.currentIndex() == 1:
-                if self.leTScale.text() == "":
-                    Feh = Feh  + self.tr("Scale - value missing\n")
-            """
+
+
+
+
+
             return True, p
-        # hier darf der Code nicht rauskommen
+
         errbox ("Programmierfehler")
     
     def ManageTransformFelder4Kombi(self):
         if  self.optTPoint.isChecked():
             self.tabTPoints.setRowCount(self.cbTArt.currentIndex()+1)
         
-        self.lbTScale.setVisible(False) #aktuell nicht realisiert
-        self.leTScale.setVisible(False) #aktuell nicht realisiert
-        """ aktuell nicht realisiert
-        if self.optTParam.isChecked():
-            self.lbTScale.setVisible(self.cbTArt.currentIndex() == 1)
-            self.leTScale.setVisible(self.cbTArt.currentIndex() == 1)
-        """
+        self.lbTScale.setVisible(False) 
+        self.leTScale.setVisible(False) 
+
+
+
+
+
             
     def ManageTransformSettings(self):
         if self.chkTransform.isChecked():
-            self.tabSetting.setTabEnabled(1,True)  # Register aktivieren          
+            self.tabSetting.setTabEnabled(1,True)  
             
-            self.tabTPoints.setVisible(self.optTPoint.isChecked() or self.optTWld.isChecked()) # Passpunkttabelle
+            self.tabTPoints.setVisible(self.optTPoint.isChecked() or self.optTWld.isChecked()) 
             self.tabTPoints.setEnabled(self.optTPoint.isChecked())
             
-            self.grpTParam.setVisible(self.optTParam.isChecked())  # Parameterliste
-            self.cbTArt.setVisible(self.optTPoint.isChecked())     # aktuell nur bei Punkttabelle : (not self.optTWld.isChecked())
+            self.grpTParam.setVisible(self.optTParam.isChecked())  
+            self.cbTArt.setVisible(self.optTPoint.isChecked())     
             self.lbT4Wld.setVisible(self.optTWld.isChecked())            
             
             
-            #self.cbTArt.clear()
+
             if self.optTParam.isChecked():
                 pass
-                """aktuell nicht realisiert
-                self.cbTArt.addItem(self.tr("Move"))
-                self.cbTArt.addItem(self.tr("Move and scale")) aktuell nicht realisiert
-                """
+
+
+
+
             if  self.optTPoint.isChecked():
                 self.cbTArt.setCurrentIndex(self.tabTPoints.rowCount()-1)
                 
             if  self.optTWld.isChecked():
-                # schon mal aktuelle Datei checken (da Ereignis Dateiwechsel fehlt)
+
                 self.wld4listDXFDatNam()
         else:
-            # Registerkarte deaktivieren
+
             self.tabSetting.setTabEnabled(1,False) 
 
 
@@ -471,10 +471,10 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
     def SetzeVoreinstellungen(self):
         self.ManageTransformSettings()
         
-	    # Voreinstellungen setzen
+	    
         s = QSettings( "EZUSoft", fncProgKennung() )
         
-        # letzte Anzeigegröße wiederherstellen
+
         SaveWidth  = int(s.value("SaveWidth", "0"))
         SaveHeight = int(s.value("SaveHeight", "0"))
         if SaveWidth > self.minimumWidth() and SaveHeight > self.minimumHeight():
@@ -505,9 +505,10 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
         self.chk3D.setChecked(bGen3D)
         self.chk3D_clicked()
         
-        # GeoPackage ab QGIS 3.0 und V1.1.0
-        Haupt,Neben,Revision=fncPluginVersion().split(".")
-        if myqtVersion == 5 and ( int(Haupt) >= 1 and int(Neben) >= 1): 
+
+
+
+        if False:
             bGenGPKG = True if s.value( "bGenGPKG", "Nein" ) == "Ja" else False
             self.chkGPKG.setVisible(True)
 
@@ -530,16 +531,16 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
         except:
             self.lbGDAL.setText("-")
 			
-		# 17.02.17: Keine Anpassung mehr, da bei UHD/4K ohnehin  alles anders läuft
-        # self.StartHeight=self.height()
-        # self.StartMinHeight=self.minimumHeight()
-        # Drag & Drop Event
-        #if not fncDebugMode():
-            # Kommt bei Programmfehleren immer wieder zu komischen Effekten/Abstüzen - deshalb wärend der Entwicklung deaktivieren
-            # 23.11.16: D&D deaktiviert, da nicht sichergestellt werden kann, dass alle Dateien aus einem Verzeichnis kommen
-            #               und der Anpassungsaufwand im Moment nicht lohnt
-            #self.listDXFDatNam.installEventFilter(QLineEditDropHandler(self))
-            #self.txtZielPfad.installEventFilter(QLineEditDropHandler(self))
+		
+
+
+
+
+
+
+
+
+
 
     def chkTransform_clicked(self):
         self.ManageTransformSettings()
@@ -604,15 +605,15 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
         for DXFDatName in AllDXFDatNames:
             DXFDatName=(DXFDatName).replace("\\","/")
             if Anz == 0:
-                # im Gegensatz zu getOpenFileName() gibt getOpenFileNames Backslash's zurück
+
                 self.listDXFDatNam.clear()
                 self.listDXFDatNam.setEnabled(True)     
                 (dxfDir, dxfFile) = os.path.split(DXFDatName)
                 if (dxfDir != ""):
                     s.setValue("lastDXFDir", dxfDir) 
-                #für Übergang    
-                #printlog (DXFDatName)
-                #self.txtDXFDatNam.setText(DXFDatName)
+
+
+
             Anz=Anz+1        
             self.listDXFDatNam.addItem(DXFDatName) 
             MerkAnz=Anz
@@ -670,13 +671,13 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
             self.SetzeVoreinstellungen()
     
     def btnStart_clicked(self):
-        # 0. Test ob eine DXF gewählt
+
         if self.listDXFDatNam.count() == 0 or (self.listDXFDatNam.count() == 1 and self.listDXFDatNam.item(0).text() == self.listEmpty):
             QMessageBox.critical(None,  self.tr("Please specify a DXF-File"),self.tr(u"DXF-file not selected")) 
             return
 
-        # 1. Test ob alle dxf lesbar
-        #allDXFDat = self.listDXFDatNam('', Qt.MatchRegExp)
+
+
         for i in range(self.listDXFDatNam.count()):
             AktDat=self.listDXFDatNam.item(i).text()
             if not os.path.exists(AktDat):
@@ -684,7 +685,7 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
                 return
 
 
-        # 2. Test ob ZielPfad vorhanden
+
         if self.chkSHP.isChecked():
             ZielPfad=self.txtZielPfad.text()
         else:
@@ -699,7 +700,7 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
             QMessageBox.critical(None, self.tr("Destination path not found"), ZielPfad)
             return
              
-        #3. Test ob Faktor logisch            
+
         try:
             dblFaktor=float(self.txtFaktor.text().replace(",","."))
             if dblFaktor == 0:
@@ -711,23 +712,23 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
             self.txtFaktor.setText("1.3")
             return
             
-        #4. Test ob allgemeine Transformationswerte korrekt
+
         if self.chkTransform.isChecked():
-            # Bei Fehler Rückgabe False und Fehlertext
-            # sonst True und optional Punktliste p
+
+
             Korrekt, DreiPassPunkte=self.CheckKonstTransWerte()
             if not Korrekt:
                 errbox (DreiPassPunkte)
-                self.tabSetting.setCurrentIndex(1) # registerkarte aktivieren
+                self.tabSetting.setCurrentIndex(1) 
                 return
         else:
             DreiPassPunkte=None
             
         self.OptSpeichern()
-        self.tabSetting.setCurrentIndex(0) # erste Registerkarte, damit Laufbalken sichtbar
+        self.tabSetting.setCurrentIndex(0) 
         
         Antw = DXFImporter (self, "SHP", self.listDXFDatNam, ZielPfad, self.chkSHP.isChecked(), self.cbCharSet.currentText(),self.chkCol.isChecked(),self.chkLay.isChecked(), self.chkUseTextFormat.isChecked(), self.chkUseColor4Point.isChecked(), self.chkUseColor4Line.isChecked(), self.chkUseColor4Poly.isChecked(), dblFaktor, self.chkTransform.isChecked(), DreiPassPunkte, self.chk3D.isChecked())
-        self.FormRunning(False) # nur sicherheitshalber, falls in DXFImporter übersprungen/vergessen
+        self.FormRunning(False) 
         
     
         
@@ -737,11 +738,11 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
     def SetAktionAktSchritt(self,akt):
         self.pgBar.setValue(akt)
         self.repaint()
-        #QMessageBox.information(None, ("aktuell gesetzt"), str(akt))
+
     def SetAktionGesSchritte(self,ges):
         self.pgBar.setMaximum(ges)
         self.repaint()
-        #QMessageBox.information(None, ("maximum gesetzt"), str(ges))
+
     
     def SetDatAktionText(self,txt):
         self.lbDatAktion.setText(txt)
@@ -749,11 +750,11 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
     def SetDatAktionAktSchritt(self,akt):
         self.pgDatBar.setValue(akt)
         self.repaint()
-        #QMessageBox.information(None, ("aktuell gesetzt"), str(akt))
+
     def SetDatAktionGesSchritte(self,ges):
         self.pgDatBar.setMaximum(ges)
         self.repaint()
-        #QMessageBox.information(None, ("maximum gesetzt"), str(ges))
+
 
     def FormRunning(self,bRun):
         def Anz(ctl):
@@ -787,7 +788,7 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
             self.lbDatAktion.show()
             self.pgDatBar.setValue(0) 
             self.AktDatSchritt = 0 
-            # eventuell Shape aktivieren
+
             self.chkSHP_clicked()
         else:
             self.lbIcon.hide()
@@ -804,10 +805,10 @@ class uiADXF2Shape(QDialog, FORM_CLASS):
 if __name__ == "__main__":
  
     app = QApplication(sys.argv)
-    #from uiADXF2Shape import uiADXF2Shape
+
     QFileDialog.getOpenFileNames(self, 'Open File', "", 'DXF  (*.dxf)')
-    #window = uiADXF2Shape()
-    #window.show()
-    #sys.exit(app.exec_())
-    #"""
+
+
+
+
 
