@@ -8,12 +8,15 @@
 # This file should be included when you package your plugin.# Mandatory items:
 
 [general]
-name=AnotherDXFImporter Master
+name=AnotherDXFImporter
 qgisMinimumVersion=2.8
 qgisMaximumVersion=3.99
 description=Add DXF to QGIS , optional georeferencing, optional convert DXF to Shape
-version=1.1.1
-changelog=23.10.19 V1.1.1
+version=1.1.2
+changelog=25.10.19 V1.1.2
+    - Bug-fix 
+
+    23.10.19 V1.1.1
     - Bug-fix 
     - support \P Codes in MText
 

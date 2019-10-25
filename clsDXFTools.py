@@ -289,13 +289,14 @@ def kat4Layer(layer, bUseColor4Line,bUseColor4Poly):
 
 def DelShapeDatBlock (shpDat):
 
-
+    try:
         rest=shpDat 
         os.remove(shpDat)
         for rest in glob(shpDat[0:-4] + '.*'):
             os.remove(rest)
         return True
-
+    except:
+        pass
 
 
     
