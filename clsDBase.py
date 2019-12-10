@@ -293,7 +293,7 @@ def ShapeCodepage2Utf8 (OrgShpDat, TargetShpDat, OrgCodePage):
     if OrgCodePage == "System":
         OrgCodePage=locale.getdefaultlocale()[1]
  
-    oLayer=QgsVectorLayer(OrgShpDat,None, 'ogr')
+    oLayer=QgsVectorLayer(OrgShpDat,'', 'ogr')
     oLayer.setProviderEncoding(OrgCodePage)
     oLayer.dataProvider().setEncoding(OrgCodePage)
     zLayer=QgsVectorFileWriter.writeAsVectorFormat(oLayer,TargetShpDat,TargetCodePage, oLayer.crs(), "ESRI Shapefile")

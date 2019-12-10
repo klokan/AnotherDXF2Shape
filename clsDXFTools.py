@@ -295,7 +295,7 @@ def DelShapeDatBlock (shpDat):
         for rest in glob(shpDat[0:-4] + '.*'):
             os.remove(rest)
         return True
-    except:
+    except OSError as e:  
         pass
 
 
@@ -403,7 +403,24 @@ def DXFImporter(uiParent, sOutForm, listDXFDatNam, zielPfadOrDatei, bZielSave, s
 
 
 
-    mLay=QgsVectorLayer('LineString','' , 'memory') 
+    
+    
+
+    
+
+
+    mLay=QgsVectorLayer('LineString?crs=EPSG:4326','' , 'memory')
+
+    mem0Dat=EZUTempDir() + str(uuid.uuid4()) + '.shp'
+    Antw=QgsVectorFileWriter.writeAsVectorFormat(mLay,mem0Dat,  None, mLay.crs(), "ESRI Shapefile")
+
+    os.remove(mem0Dat[0:-3] + 'qpj')
+    os.remove(mem0Dat[0:-3] + 'prj')
+
+    mLay=QgsVectorLayer(mem0Dat, '' , 'ogr')
+
+
+
     memDat=EZUTempDir() + str(uuid.uuid4()) + '.shp'
     Antw=QgsVectorFileWriter.writeAsVectorFormat(mLay,memDat,  None, mLay.crs(), "ESRI Shapefile")
     qPrjDatName=memDat[0:-3] + 'qpj'
@@ -614,7 +631,9 @@ def EineDXF(uiParent, mLay_crs, bZielSave, sOutForm, grpProjekt,AktList, Kern, A
 
                 aktShapeName=korrSHPDatNam
                 korrSHPDatNam=(EZUTempDir() + str(uuid.uuid4()) + '.shp') 
-                ShapeCodepage2Utf8 (aktShapeName, korrSHPDatNam, sOrgCharSet) 
+
+                if os.path.exists(qPrjDatName) : copyfile (qPrjDatName,aktShapeName[0:-3]+"qpj")
+                ShapeCodepage2Utf8 (aktShapeName, korrSHPDatNam,  sOrgCharSet) 
                 sCharSet="utf-8"
             
             if bKonvOK:
@@ -631,7 +650,7 @@ def EineDXF(uiParent, mLay_crs, bZielSave, sOutForm, grpProjekt,AktList, Kern, A
 
 
 
-                    copyfile (qPrjDatName,shpdat[0:-3]+"qpj")
+                    if os.path.exists(qPrjDatName): copyfile (qPrjDatName,shpdat[0:-3]+"qpj")
                     Layer = QgsVectorLayer(shpdat, "entities"+v[0],"ogr") 
 
                  
